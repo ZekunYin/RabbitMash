@@ -29,7 +29,7 @@ public:
     void push_back64(hash64_t hash) {hashes64.push_back(hash);}
     bool get64() const {return use64;}
     
-private:
+public:
     
     bool use64;
     std::vector<hash32_t> hashes32;

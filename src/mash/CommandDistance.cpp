@@ -343,27 +343,46 @@ void compareSketches(CommandDistance::CompareOutput::PairOutput * output, const 
     const HashList & hashesSortedQry = refQry.hashesSorted;
     
     output->pass = false;
-    
-    while ( denom < sketchSize && i < hashesSortedRef.size() && j < hashesSortedQry.size() )
-    {
-        if ( hashLessThan(hashesSortedRef.at(i), hashesSortedQry.at(j), hashesSortedRef.get64()) )
-        {
-            i++;
-        }
-        else if ( hashLessThan(hashesSortedQry.at(j), hashesSortedRef.at(i), hashesSortedRef.get64()) )
-        {
-            j++;
-        }
-        else
-        {
-            i++;
-            j++;
-            common++;
-        }
-        
-        denom++;
-    }
-    
+
+   	if(hashesSortedRef.get64())
+	{
+   		//TODO:only for uint64
+		common = u64_intersect_vector_avx512((uint64_t*)hashesSortedRef.hashes64.data(), hashesSortedRef.size(), (uint64_t*)hashesSortedQry.hashes64.data(), hashesSortedQry.size(), sketchSize, &i, &j);
+
+		denom = i + j - common;
+		//cout << "denom: " << denom << endl;
+		//cout << "common: " << common << endl;
+		//cout << "i: " << i<< endl;
+		//cout << "j: " << j<< endl;
+	}
+	else{
+
+    	while ( denom < sketchSize && i < hashesSortedRef.size() && j < hashesSortedQry.size() )
+    	{
+    	    if ( hashLessThan(hashesSortedRef.at(i), hashesSortedQry.at(j), hashesSortedRef.get64()) )
+    	    {
+    	        i++;
+    	    }
+    	    else if ( hashLessThan(hashesSortedQry.at(j), hashesSortedRef.at(i), hashesSortedRef.get64()) )
+    	    {
+    	        j++;
+    	    }
+    	    else
+    	    {
+    	        i++;
+    	        j++;
+    	        common++;
+    	    }
+    	    
+    	    denom++;
+    	}
+		//cout << "denom: " << denom << endl;
+		//cout << "common: " << common << endl;
+		//cout << "i: " << i<< endl;
+		//cout << "j: " << j<< endl;
+  	} 
+
+
     if ( denom < sketchSize )
     {
         // complete the union operation if possible
@@ -445,6 +464,141 @@ double pValue(uint64_t x, uint64_t lengthRef, uint64_t lengthQuery, double kmerS
 #else
     return gsl_cdf_binomial_Q(x - 1, r, sketchSize);
 #endif
+}
+
+uint64_t u64_intersect_scalar_stop(const uint64_t *list1, uint64_t size1, const uint64_t *list2, uint64_t size2, uint64_t size3,
+									uint64_t *i_a, uint64_t *i_b){
+		uint64_t counter=0;
+		const uint64_t *end1 = list1+size1, *end2 = list2+size2;
+		*i_a = 0;
+		*i_b = 0;
+		//uint64_t stop = 0;
+		// hard to get only the loop instructions, now only a tiny check at the top wrong
+#if IACA_INTERSECT_SCALAR
+		IACA_START
+#endif
+				while(list1 != end1 && list2 != end2 ){
+						if(*list1 < *list2){
+								list1++;
+								(*i_a)++;
+								size3--;
+						}else if(*list1 > *list2){
+								list2++; 
+								(*i_b)++;
+								size3--;
+						}else{
+								//result[counter++] = *list1;
+								counter++;
+								list1++; list2++; 
+								(*i_a)++;
+								(*i_b)++;
+								size3--;
+						}
+						if(size3 == 0) break;
+				}
+#if IACA_INTERSECT_SCALAR
+		IACA_END
+#endif
+				return counter;
+}
+
+static /*constexpr*/ std::array<uint64_t,8*7> u64_prepare_shuffle_vectors(){
+		std::array<uint64_t,8*7> arr = {};
+		uint64_t start=1;
+		for(uint64_t i=0; i<7; ++i){
+				uint64_t counter = start;
+				for(uint64_t j=0; j<8; ++j){
+						arr[i*8 + j] = counter % 8;
+						++counter;
+				}
+				++start;
+		}
+		return arr;
+}
+static const /*constexpr*/ auto u64_shuffle_vectors_arr = u64_prepare_shuffle_vectors();
+
+static const /*constexpr*/ __m512i *u64_shuffle_vectors = (__m512i*)u64_shuffle_vectors_arr.data();
+
+uint64_t u64_intersect_vector_avx512(const uint64_t *list1,  uint64_t size1, const uint64_t *list2, uint64_t size2, uint64_t size3, uint64_t *i_a, uint64_t *i_b)
+{
+		//assert(size3 <= size1 + size2);
+		uint64_t count=0;
+		*i_a = 0;
+		*i_b = 0;
+		uint64_t st_a = (size1 / 8) * 8;
+		uint64_t st_b = (size2 / 8) * 8;
+	//	uint64_t stop = (size3 / 16) * 16;
+
+		uint64_t i_a_s, i_b_s;
+
+		if(size3 <= 8){
+			count += u64_intersect_scalar_stop(list1, size1, list2, size2, size3, i_a, i_b);
+			return count;
+		}
+		
+		uint64_t stop = size3 - 8;
+		cout << "stop: " << stop <<  endl;
+		__m512i sv0  = u64_shuffle_vectors[ 0];//_mm512_set_epi32(0,15,14,13,12,11,10,9,8,7,6,5,4,3,2,1);
+		__m512i sv1  = u64_shuffle_vectors[ 1];//_mm512_set_epi32(1,0,15,14,13,12,11,10,9,8,7,6,5,4,3,2);
+		__m512i sv2  = u64_shuffle_vectors[ 2];//_mm512_set_epi32(2,1,0,15,14,13,12,11,10,9,8,7,6,5,4,3);
+		__m512i sv3  = u64_shuffle_vectors[ 3];//_mm512_set_epi32(3,2,1,0,15,14,13,12,11,10,9,8,7,6,5,4);
+		__m512i sv4  = u64_shuffle_vectors[ 4];//_mm512_set_epi32(4,3,2,1,0,15,14,13,12,11,10,9,8,7,6,5);
+		__m512i sv5  = u64_shuffle_vectors[ 5];//_mm512_set_epi32(5,4,3,2,1,0,15,14,13,12,11,10,9,8,7,6);
+		__m512i sv6  = u64_shuffle_vectors[ 6];//_mm512_set_epi32(6,5,4,3,2,1,0,15,14,13,12,11,10,9,8,7);
+
+		//__m512i vzero = _mm512_setzero_epi32();
+		while(*i_a < st_a && *i_b < st_b){
+				__m512i v_a = _mm512_loadu_epi64((__m512i*)&list1[*i_a]);
+				__m512i v_b = _mm512_loadu_epi64((__m512i*)&list2[*i_b]);
+
+				int64_t a_max = list1[*i_a+7];
+				int64_t b_max = list2[*i_b+7];
+				*i_a += (a_max <= b_max) * 8;
+				*i_b += (a_max >= b_max) * 8;
+
+				__mmask16 cmp0 = _mm512_cmpeq_epi64_mask(v_a, v_b);
+				__m512i rot0 = _mm512_permutexvar_epi64(sv0, v_b);
+				__mmask16 cmp1 = _mm512_cmpeq_epi64_mask(v_a, rot0);
+				__m512i rot1 = _mm512_permutexvar_epi64(sv1, v_b);
+				__mmask16 cmp2 = _mm512_cmpeq_epi64_mask(v_a, rot1);
+				__m512i rot2 = _mm512_permutexvar_epi64(sv2, v_b);
+				__mmask16 cmp3 = _mm512_cmpeq_epi64_mask(v_a, rot2);
+				cmp0 = _mm512_kor(_mm512_kor(cmp0, cmp1), _mm512_kor(cmp2, cmp3));
+
+				__m512i rot3 = _mm512_permutexvar_epi64(sv3, v_b);
+				__mmask16 cmp4 = _mm512_cmpeq_epi64_mask(v_a, rot3);
+				__m512i rot4 = _mm512_permutexvar_epi64(sv4, v_b);
+				__mmask16 cmp5 = _mm512_cmpeq_epi64_mask(v_a, rot4);
+				__m512i rot5 = _mm512_permutexvar_epi64(sv5, v_b);
+				__mmask16 cmp6 = _mm512_cmpeq_epi64_mask(v_a, rot5);
+				__m512i rot6 = _mm512_permutexvar_epi64(sv6, v_b);
+				__mmask16 cmp7 = _mm512_cmpeq_epi64_mask(v_a, rot6);
+				cmp4 = _mm512_kor(_mm512_kor(cmp4, cmp5), _mm512_kor(cmp6, cmp7));
+
+
+				cmp0 = _mm512_kor(cmp0, cmp4);
+				
+				//_mm512_mask_compressstoreu_epi64(&result[count], cmp0, v_a);
+				count += _mm_popcnt_u64(cmp0);
+				if(*i_a + *i_b - count >= stop) break;
+
+		}
+		cout << "avx512 i_a: " << *i_a << endl;
+		cout << "avx512 i_b: " << *i_b << endl;
+		cout << "avx512 count " << count << endl;
+		// intersect the tail using scalar intersection
+		//count += u64_intersect_scalar(list1+i_a, size1-i_a, list2+i_b, size2-i_b, result+count);
+		//if(size3 - *i_a - *i_b == 0){
+		//	return count;
+		//}
+		//else{
+			count += u64_intersect_scalar_stop(list1+*i_a, size1-*i_a, list2+*i_b, size2-*i_b, size3 - (*i_a+*i_b - count), &i_a_s, &i_b_s);
+
+			*i_a += i_a_s;
+			*i_b += i_b_s;
+		//}
+		return count;
+
 }
 
 } // namespace mash
