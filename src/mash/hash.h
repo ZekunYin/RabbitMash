@@ -19,6 +19,7 @@ union hash_u
 };
 
 hash_u getHash(const char * seq, int length, uint32_t seed, bool use64);
+//hash_u getHash(char * seq, int length, uint32_t seed, bool use64);
 bool hashLessThan(hash_u hash1, hash_u hash2, bool use64);
 
 #endif
