@@ -20,6 +20,7 @@
     #include <gsl/gsl_cdf.h>
 #endif
 
+
 using namespace::std;
 
 namespace mash {
@@ -58,7 +59,20 @@ int CommandTriangle::run() const
     double pValueMax = options.at("pvalue").getArgumentAsNumber();
     double distanceMax = options.at("distance").getArgumentAsNumber();
     double pValuePeakToSet = 0;
-    
+   
+   	string ofile = "rabbit-mash-output.bin";
+
+	fstream output(ofile, output.binary | output.out);
+	
+	if(!output.is_open()){
+		cerr << "fail to open output file" << endl;
+		return 0;
+	}
+
+	
+
+
+
     if ( options.at("pvalue").active || options.at("distance").active )
     {
         edge = true;
@@ -127,20 +141,22 @@ int CommandTriangle::run() const
     }
     
     ThreadPool<TriangleInput, TriangleOutput> threadPool(compare, threads);
-    
+   
+   	double * outputBuffer = new double[sketch.getReferenceCount()];
+
     for ( uint64_t i = 1; i < sketch.getReferenceCount(); i++ )
     {
         threadPool.runWhenThreadAvailable(new TriangleInput(sketch, i, parameters, distanceMax, pValueMax));
         
         while ( threadPool.outputAvailable() )
         {
-            writeOutput(threadPool.popOutputWhenAvailable(), comment, edge, pValuePeakToSet);
+            writeOutput(threadPool.popOutputWhenAvailable(), comment, edge, pValuePeakToSet, outputBuffer, output);
         }
     }
     
     while ( threadPool.running() )
     {
-        writeOutput(threadPool.popOutputWhenAvailable(), comment, edge, pValuePeakToSet);
+        writeOutput(threadPool.popOutputWhenAvailable(), comment, edge, pValuePeakToSet, outputBuffer, output);
     }
     
     if ( !edge )
@@ -152,47 +168,56 @@ int CommandTriangle::run() const
     {
     	warnKmerSize(parameters, *this, lengthMax, lengthMaxName, randomChance, kMin, warningCount);
     }
-    
+   
+   	delete outputBuffer;
+
+	output.close();	
+
     return 0;
 }
 
-void CommandTriangle::writeOutput(TriangleOutput * output, bool comment, bool edge, double & pValuePeakToSet) const
+void CommandTriangle::writeOutput(TriangleOutput * output, bool comment, bool edge, double & pValuePeakToSet, double * outputBuffer, fstream & outputFile) const
 {
     const Sketch & sketch = output->sketch;
     const Sketch::Reference & ref = sketch.getReference(output->index);
     
-    if ( !edge )
-    {
-        cout << (comment ? ref.comment : ref.name);
-    }
+    //if ( !edge )
+    //{
+    //    cout << (comment ? ref.comment : ref.name);
+    //}
     
     for ( uint64_t i = 0; i < output->index; i++ )
     {
         const CommandDistance::CompareOutput::PairOutput * pair = &output->pairs[i];
         
-        if ( edge )
-        {
-            if ( pair->pass )
-            {
-                const Sketch::Reference & qry = sketch.getReference(i);
-                cout << (comment ? ref.comment : ref.name) << '\t'<< (comment ? qry.comment : qry.name) << '\t' << pair->distance << '\t' << pair->pValue << '\t' << pair->numer << '/' << pair->denom << endl;
-            }
-        }
-        else
-        {
-            cout << '\t' << pair->distance;
-        }
-        
+        //if ( edge )
+        //{
+        //    if ( pair->pass )
+        //    {
+        //        const Sketch::Reference & qry = sketch.getReference(i);
+        //        cout << (comment ? ref.comment : ref.name) << '\t'<< (comment ? qry.comment : qry.name) << '\t' << pair->distance << '\t' << pair->pValue << '\t' << pair->numer << '/' << pair->denom << endl;
+        //    }
+        //}
+        //else
+        //{
+        //    cout << '\t' << pair->distance;
+        //}
+
+		//TODO
+       	outputBuffer[i] = pair->distance;
+
         if ( pair->pValue > pValuePeakToSet )
         {
             pValuePeakToSet = pair->pValue;
         }
     }
+
+	outputFile.write(reinterpret_cast<char*>(outputBuffer), output->index * sizeof(double));
     
-    if ( !edge )
-    {
-        cout << endl;
-    }
+    //if ( !edge )
+    //{
+    //    cout << endl;
+    //}
     
     delete output;
 }

@@ -11,6 +11,8 @@
 #include "CommandDistance.h"
 #include "Sketch.h"
 
+#include <fstream>
+
 namespace mash {
 
 class CommandTriangle : public Command
@@ -65,7 +67,7 @@ private:
     double pValueMax;
     bool comment;
     
-    void writeOutput(TriangleOutput * output, bool comment, bool edge, double & pValuePeakToSet) const;
+    void writeOutput(TriangleOutput * output, bool comment, bool edge, double & pValuePeakToSet, double * outputBuffer, std::fstream & outputFile) const;
 };
 
 CommandTriangle::TriangleOutput * compare(CommandTriangle::TriangleInput * input);
