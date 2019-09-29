@@ -39,6 +39,7 @@ CommandTriangle::CommandTriangle()
     addOption("edge", Option(Option::Boolean, "E", "Output", "Output edge list instead of Phylip matrix, with fields [seq1, seq2, dist, p-val, shared-hashes].", ""));
     addOption("pvalue", Option(Option::Number, "v", "Output", "Maximum p-value to report in edge list. Implies -" + getOption("edge").identifier + ".", "1.0", 0., 1.));
     addOption("distance", Option(Option::Number, "d", "Output", "Maximum distance to report in edge list. Implies -" + getOption("edge").identifier + ".", "1.0", 0., 1.));
+	addOption("outBin", Option(Option::String, "o", "Output", "output to the binary format with a higher speed.", "./rabbit-mash-output.bin"));
     //addOption("log", Option(Option::Boolean, "L", "Output", "Log scale distances and divide by k-mer size to provide a better analog to phylogenetic distance. The special case of zero shared min-hashes will result in a distance of 1.", ""));
     useSketchOptions();
 }
@@ -59,15 +60,20 @@ int CommandTriangle::run() const
     double pValueMax = options.at("pvalue").getArgumentAsNumber();
     double distanceMax = options.at("distance").getArgumentAsNumber();
     double pValuePeakToSet = 0;
+	//bool outBin = options.at("outBin").active;
    
-   	string ofile = "rabbit-mash-output.bin";
+   	//if(outBin){
+   	string ofile = options.at("outBin").argument;
+
+	cerr << "writing result to " << ofile << endl;
 
 	fstream output(ofile, output.binary | output.out);
 	
 	if(!output.is_open()){
-		cerr << "fail to open output file" << endl;
+		cerr << "fail to open " << ofile << endl;
 		return 0;
 	}
+	//}
 
 	
 
@@ -150,13 +156,26 @@ int CommandTriangle::run() const
         
         while ( threadPool.outputAvailable() )
         {
-            writeOutput(threadPool.popOutputWhenAvailable(), comment, edge, pValuePeakToSet, outputBuffer, output);
+		//	if(outBin){	
+            	writeOutput(threadPool.popOutputWhenAvailable(), comment, edge, pValuePeakToSet, outputBuffer, output);
+		//	}
+		//	else{
+        //    	writeOutput(threadPool.popOutputWhenAvailable(), comment, edge, pValuePeakToSet);
+		//	}
+
         }
     }
     
     while ( threadPool.running() )
     {
-        writeOutput(threadPool.popOutputWhenAvailable(), comment, edge, pValuePeakToSet, outputBuffer, output);
+	//	if(outBin){
+        	writeOutput(threadPool.popOutputWhenAvailable(), comment, edge, pValuePeakToSet, outputBuffer, output);
+	//	}
+	//	else{
+    //    	writeOutput(threadPool.popOutputWhenAvailable(), comment, edge, pValuePeakToSet);
+	//	}	
+
+
     }
     
     if ( !edge )
@@ -205,6 +224,7 @@ void CommandTriangle::writeOutput(TriangleOutput * output, bool comment, bool ed
 
 		//TODO
        	outputBuffer[i] = pair->distance;
+		//cout << outputBuffer[i] << endl;
 
         if ( pair->pValue > pValuePeakToSet )
         {
@@ -221,6 +241,52 @@ void CommandTriangle::writeOutput(TriangleOutput * output, bool comment, bool ed
     
     delete output;
 }
+void CommandTriangle::writeOutput(TriangleOutput * output, bool comment, bool edge, double & pValuePeakToSet) const
+{
+    const Sketch & sketch = output->sketch;
+    const Sketch::Reference & ref = sketch.getReference(output->index);
+    
+    if ( !edge )
+    {
+        cout << (comment ? ref.comment : ref.name);
+    }
+    
+    for ( uint64_t i = 0; i < output->index; i++ )
+    {
+        const CommandDistance::CompareOutput::PairOutput * pair = &output->pairs[i];
+        
+        if ( edge )
+        {
+            if ( pair->pass )
+            {
+                const Sketch::Reference & qry = sketch.getReference(i);
+                cout << (comment ? ref.comment : ref.name) << '\t'<< (comment ? qry.comment : qry.name) << '\t' << pair->distance << '\t' << pair->pValue << '\t' << pair->numer << '/' << pair->denom << endl;
+            }
+        }
+        else
+        {
+            cout << '\t' << pair->distance;
+        }
+
+		//TODO
+       	//outputBuffer[i] = pair->distance;
+
+        if ( pair->pValue > pValuePeakToSet )
+        {
+            pValuePeakToSet = pair->pValue;
+        }
+    }
+
+	//outputFile.write(reinterpret_cast<char*>(outputBuffer), output->index * sizeof(double));
+    
+    if ( !edge )
+    {
+        cout << endl;
+    }
+    
+    delete output;
+}
+
 
 CommandTriangle::TriangleOutput * compare(CommandTriangle::TriangleInput * input)
 {
