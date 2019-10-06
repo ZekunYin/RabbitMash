@@ -15,6 +15,8 @@
 #include "CommandInfo.h"
 #include "CommandPaste.h"
 
+#include "CommandOutputbin.h"
+
 int main(int argc, const char ** argv)
 {
     mash::CommandList commandList("mash");
@@ -33,6 +35,7 @@ int main(int argc, const char ** argv)
     commandList.addCommand(new mash::CommandInfo());
     commandList.addCommand(new mash::CommandPaste());
     commandList.addCommand(new mash::CommandBounds());
+	commandList.addCommand(new mash::CommandOutputbin());
     
     return commandList.run(argc, argv);
 }

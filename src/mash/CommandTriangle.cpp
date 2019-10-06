@@ -61,16 +61,34 @@ int CommandTriangle::run() const
     double distanceMax = options.at("distance").getArgumentAsNumber();
     double pValuePeakToSet = 0;
 	//bool outBin = options.at("outBin").active;
+
+	//addbyxxm: test the option of string about bool return.
+	//if(options.at("outBin").active){
+	//	cerr << "the option of -o is true." << endl;
+	//}
+	//else 
+	//	cerr << "the option of -o is true." << endl;
+	//return 1;	
    
    	//if(outBin){
    	string ofile = options.at("outBin").argument;
 
 	cerr << "writing result to " << ofile << endl;
 
-	fstream output(ofile, output.binary | output.out);
+	string nameFile = ofile + "Name.bin";
+	string distFile = ofile + "Dist.bin";
+
+	//fstream output(ofile, output.binary | output.out);
+	fstream output1(nameFile, output1.binary | output1.out);
+	fstream output2(distFile, output2.binary | output2.out);
 	
-	if(!output.is_open()){
-		cerr << "fail to open " << ofile << endl;
+	if(!output1.is_open()){
+		cerr << "fail to open " << nameFile << endl;
+		return 0;
+	}
+
+	if(!output2.is_open()){
+		cerr << "fail to open " << distFile << endl;
 		return 0;
 	}
 	//}
@@ -145,10 +163,22 @@ int CommandTriangle::run() const
         cout << '\t' << sketch.getReferenceCount() << endl;
         cout << (comment ? sketch.getReference(0).comment : sketch.getReference(0).name) << endl;
     }
+	
     
     ThreadPool<TriangleInput, TriangleOutput> threadPool(compare, threads);
    
-   	double * outputBuffer = new double[sketch.getReferenceCount()];
+   	int nameLength = 20;
+   	char * output1Buffer = new char[nameLength];
+   	double * output2Buffer = new double[sketch.getReferenceCount()];
+	//add the first seq into the outputResult.
+	//string name0 = sketch.getReference(0).name;
+	//output1Buffer = &name0[0];
+	//output1.write(reinterpret_cast<char*>(output1Buffer), (20) * sizeof(char));
+
+	
+
+	
+	
 
     for ( uint64_t i = 1; i < sketch.getReferenceCount(); i++ )
     {
@@ -157,7 +187,7 @@ int CommandTriangle::run() const
         while ( threadPool.outputAvailable() )
         {
 		//	if(outBin){	
-            	writeOutput(threadPool.popOutputWhenAvailable(), comment, edge, pValuePeakToSet, outputBuffer, output);
+            	writeOutput(threadPool.popOutputWhenAvailable(), comment, edge, pValuePeakToSet, output1Buffer, output1, output2Buffer, output2);
 		//	}
 		//	else{
         //    	writeOutput(threadPool.popOutputWhenAvailable(), comment, edge, pValuePeakToSet);
@@ -169,7 +199,8 @@ int CommandTriangle::run() const
     while ( threadPool.running() )
     {
 	//	if(outBin){
-        	writeOutput(threadPool.popOutputWhenAvailable(), comment, edge, pValuePeakToSet, outputBuffer, output);
+            writeOutput(threadPool.popOutputWhenAvailable(), comment, edge, pValuePeakToSet, output1Buffer, output1, output2Buffer, output2);
+        //	writeOutput(threadPool.popOutputWhenAvailable(), comment, edge, pValuePeakToSet, outputBuffer, output);
 	//	}
 	//	else{
     //    	writeOutput(threadPool.popOutputWhenAvailable(), comment, edge, pValuePeakToSet);
@@ -188,23 +219,34 @@ int CommandTriangle::run() const
     	warnKmerSize(parameters, *this, lengthMax, lengthMaxName, randomChance, kMin, warningCount);
     }
    
-   	delete outputBuffer;
+   	delete output1Buffer;
+   	delete output2Buffer;
 
-	output.close();	
+	output1.close();	
+	output2.close();	
 
     return 0;
 }
 
-void CommandTriangle::writeOutput(TriangleOutput * output, bool comment, bool edge, double & pValuePeakToSet, double * outputBuffer, fstream & outputFile) const
+void CommandTriangle::writeOutput(TriangleOutput * output, bool comment, bool edge, double & pValuePeakToSet, char * output1Buffer, fstream &output1File, double * output2Buffer, fstream & output2File) const
 {
     const Sketch & sketch = output->sketch;
     const Sketch::Reference & ref = sketch.getReference(output->index);
+
+	string name_ = ref.name;
+	//cout << name_ << "===addbyxxm" <<endl;
+	//exit(0);
+	output1Buffer = &(name_[0]);
+	output1File.write(reinterpret_cast<char*>(output1Buffer), (20) * sizeof(char));
+
     
     //if ( !edge )
     //{
     //    cout << (comment ? ref.comment : ref.name);
     //}
     
+	double distCount = 0.0;
+	int j = 0;
     for ( uint64_t i = 0; i < output->index; i++ )
     {
         const CommandDistance::CompareOutput::PairOutput * pair = &output->pairs[i];
@@ -223,7 +265,39 @@ void CommandTriangle::writeOutput(TriangleOutput * output, bool comment, bool ed
         //}
 
 		//TODO
-       	outputBuffer[i] = pair->distance;
+		if(pair->distance == 1.0){
+			distCount += 1.0;
+		}
+		else{
+			if(distCount == 0.0){
+				output2Buffer[j] = pair->distance;
+				j++;
+			}
+			else{
+				output2Buffer[j] = distCount;
+				j++;
+				output2Buffer[j] = pair->distance;
+				j++;
+			}
+			distCount = 0.0;
+		}
+			//if(pair->distance != 1.0){
+			//	if(distCount == 0.0){
+			//		outputBuffer[j] = pair->distance;
+			//		j++;
+			//	}
+			//	else{
+			//		outputBuffer[j] = distCount;
+			//		j++;
+			//		outputBuffer[j] = pair->distance;
+			//		j++;
+			//	}
+			//	distCount = 0.0;
+			//}
+			//else{
+			//	distCount += 1.0;
+			//}
+       	//outputBuffer[i] = pair->distance;
 		//cout << outputBuffer[i] << endl;
 
         if ( pair->pValue > pValuePeakToSet )
@@ -231,8 +305,17 @@ void CommandTriangle::writeOutput(TriangleOutput * output, bool comment, bool ed
             pValuePeakToSet = pair->pValue;
         }
     }
+	if(distCount != 0){//if all the dist is 1, save the distCount. 
+		output2Buffer[j] = distCount;
+		j++;
+	}
 
-	outputFile.write(reinterpret_cast<char*>(outputBuffer), output->index * sizeof(double));
+	//outputFile.write(reinterpret_cast<char*>(outputBuffer), output->index * sizeof(double));
+
+	//cout << "the output->index is: " << output->index << endl;
+	//cout << "the j is: " << j << endl;
+
+	output2File.write(reinterpret_cast<char*>(output2Buffer), (j) * sizeof(double));
     
     //if ( !edge )
     //{
