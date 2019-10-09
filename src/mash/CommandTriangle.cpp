@@ -281,24 +281,6 @@ void CommandTriangle::writeOutput(TriangleOutput * output, bool comment, bool ed
 			}
 			distCount = 0.0;
 		}
-			//if(pair->distance != 1.0){
-			//	if(distCount == 0.0){
-			//		outputBuffer[j] = pair->distance;
-			//		j++;
-			//	}
-			//	else{
-			//		outputBuffer[j] = distCount;
-			//		j++;
-			//		outputBuffer[j] = pair->distance;
-			//		j++;
-			//	}
-			//	distCount = 0.0;
-			//}
-			//else{
-			//	distCount += 1.0;
-			//}
-       	//outputBuffer[i] = pair->distance;
-		//cout << outputBuffer[i] << endl;
 
         if ( pair->pValue > pValuePeakToSet )
         {
@@ -309,8 +291,6 @@ void CommandTriangle::writeOutput(TriangleOutput * output, bool comment, bool ed
 		output2Buffer[j] = distCount;
 		j++;
 	}
-
-	//outputFile.write(reinterpret_cast<char*>(outputBuffer), output->index * sizeof(double));
 
 	//cout << "the output->index is: " << output->index << endl;
 	//cout << "the j is: " << j << endl;

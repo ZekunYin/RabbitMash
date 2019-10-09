@@ -8,7 +8,10 @@
 // non-native version will be less than optimal.
 
 #include "MurmurHash3.h"
+
+#if defined (__ICC) || defined (__INTEL_COMPILER)
 #include <immintrin.h>
+#endif
 
 //-----------------------------------------------------------------------------
 // Platform-specific functions and macros
@@ -332,6 +335,7 @@ void MurmurHash3_x64_128 ( const void * key, const int len,
   ((uint64_t*)out)[1] = h2;
 }
 
+#if defined (__ICC) || defined (__INTEL_COMPILER)
 void MurmurHash3_x64_128_avx512_8x16 ( __m512i  * vkey1, __m512i * vkey2, int pend_len, int len, uint32_t seed, void * out )
 {
 	const int nblocks = len / 16; //real blocks
@@ -983,7 +987,7 @@ void MurmurHash3_x64_128_avx512_8x8 ( __m512i  * vkey, int pend_len, int len, ui
 	//}
 
 }
-
+#endif
 
 
 //-----------------------------------------------------------------------------

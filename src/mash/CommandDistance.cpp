@@ -343,6 +343,8 @@ void compareSketches(CommandDistance::CompareOutput::PairOutput * output, const 
     const HashList & hashesSortedQry = refQry.hashesSorted;
     
     output->pass = false;
+
+#if defined (__ICC) || defined (__INTEL_COMPILER)
    	if(hashesSortedRef.get64())
 	{
    		//TODO:only for uint64
@@ -385,6 +387,29 @@ void compareSketches(CommandDistance::CompareOutput::PairOutput * output, const 
 		//cout << "hash i: " << (uint64_t)hashesSortedRef.at(i).hash64 << endl;
 		//cout << "hash j: " << (uint64_t)hashesSortedQry.at(j).hash64 << endl;
   	} 
+#else
+    while ( denom < sketchSize && i < hashesSortedRef.size() && j < hashesSortedQry.size() )
+    {
+        if ( hashLessThan(hashesSortedRef.at(i), hashesSortedQry.at(j), hashesSortedRef.get64()) )
+        {
+            i++;
+        }
+        else if ( hashLessThan(hashesSortedQry.at(j), hashesSortedRef.at(i), hashesSortedRef.get64()) )
+        {
+            j++;
+        }
+        else
+        {
+	//		cout << "res: " << (uint64_t)hashesSortedRef.at(i).hash64 << endl;
+            i++;
+            j++;
+            common++;
+        }
+        
+        denom++;
+    }
+	
+#endif
 
 
     if ( denom < sketchSize )
@@ -445,6 +470,8 @@ void compareSketches(CommandDistance::CompareOutput::PairOutput * output, const 
     }
     
     output->pass = true;
+
+
 }
 
 double pValue(uint64_t x, uint64_t lengthRef, uint64_t lengthQuery, double kmerSpace, uint64_t sketchSize)
@@ -470,6 +497,7 @@ double pValue(uint64_t x, uint64_t lengthRef, uint64_t lengthQuery, double kmerS
 #endif
 }
 
+#if defined (__ICC) || defined (__INTEL_COMPILER)
 uint64_t u64_intersect_scalar_stop(const uint64_t *list1, uint64_t size1, const uint64_t *list2, uint64_t size2, uint64_t size3,
 									uint64_t *i_a, uint64_t *i_b){
 		uint64_t counter=0;
@@ -627,5 +655,6 @@ uint64_t u64_intersect_vector_avx512(const uint64_t *list1,  uint64_t size1, con
 		return count;
 
 }
+#endif
 
 } // namespace mash

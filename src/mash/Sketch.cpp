@@ -26,7 +26,9 @@
 #include <list>
 #include <string.h>
 
+#if defined (__ICC) || defined (__INTEL_COMPILER)
 #include <immintrin.h>
+#endif
 
 #define SET_BINARY_MODE(file)
 #define CHUNK 16384
@@ -36,6 +38,8 @@ using namespace std;
 
 typedef map < Sketch::hash_t, vector<Sketch::PositionHash> > LociByHash_map;
 
+
+#if defined (__ICC) || defined (__INTEL_COMPILER)
 __m512i inline min512(__m512i v1, __m512i v2){
 	__mmask8 msk_gt, msk_lt;
 	msk_gt = _mm512_cmpgt_epi64_mask(v1, v2);
@@ -81,7 +85,7 @@ void inline transpose8_epi64(__m512i *row0, __m512i* row1, __m512i* row2,__m512i
 	*row6 = _mm512_shuffle_i64x2(__tt2,__tt6,0xEE);
 	*row7 = _mm512_shuffle_i64x2(__tt3,__tt7,0xEE);
 }
-
+#endif
 
 void Sketch::getAlphabetAsString(string & alphabet) const
 {
@@ -561,15 +565,6 @@ void addMinHashes(MinHashHeap & minHashHeap, char * seq, uint64_t length, const 
     uint64_t mins = parameters.minHashesPerWindow;
     bool noncanonical = parameters.noncanonical;
 
-	//addbyxxm
-//	__m512i vSeq;
-//	__m512i vSeqRev;
-//	__m512i vmin;
-//	__m512i vzero = _mm512_setzero_si512();
-//
-//	__mmask64 mask_load = 0xffffffffffffffff;
-//	mask_load >>= (64 - kmerSize);
-    
     // Determine the 'mins' smallest hashes, including those already provided
     // (potentially replacing them). This allows min-hash sets across multiple
     // sequences to be determined.
@@ -591,7 +586,8 @@ void addMinHashes(MinHashHeap & minHashHeap, char * seq, uint64_t length, const 
     	seqRev = new char[length];
         reverseComplement(seq, seqRev, length);
     }
-
+#if defined(__ICC) || defined(__INTEL_COMPILER)
+//============================================================================================================================================================
 	//addbyxxm
     //hash_u hash = getHash(kmer, kmerSize, parameters.seed, parameters.use64);
 //  const char * kmer = (noncanonical || memcmp(kmer_fwd, kmer_rev, kmerSize) <= 0) ? kmer_fwd : kmer_rev;
@@ -622,30 +618,6 @@ void addMinHashes(MinHashHeap & minHashHeap, char * seq, uint64_t length, const 
 	mask_load >>= (64 - kmerSize);
 
 	for(int i = 0; i < n_kmers_body-1; i+=16){
-	//for(int i = 0; i < n_kmers_body-1; i+=32){
-	//for(int i = 0; i < n_kmers_body-1; i+=8){
-
-	//	vi[0] = _mm512_mask_loadu_epi8(vzero, mask_load, input8 + i + 0);
-	//	vi[1] = _mm512_mask_loadu_epi8(vzero, mask_load, input8 + i + 1);
-	//	vi[2] = _mm512_mask_loadu_epi8(vzero, mask_load, input8 + i + 2);
-	//	vi[3] = _mm512_mask_loadu_epi8(vzero, mask_load, input8 + i + 3);
-	//	vi[4] = _mm512_mask_loadu_epi8(vzero, mask_load, input8 + i + 4);
-	//	vi[5] = _mm512_mask_loadu_epi8(vzero, mask_load, input8 + i + 5);
-	//	vi[6] = _mm512_mask_loadu_epi8(vzero, mask_load, input8 + i + 6);
-	//	vi[7] = _mm512_mask_loadu_epi8(vzero, mask_load, input8 + i + 7);
-
-	//	vj[0] = _mm512_mask_loadu_epi8(vzero, mask_load, input8 + i + 8);
-	//	vj[1] = _mm512_mask_loadu_epi8(vzero, mask_load, input8 + i + 9);
-	//	vj[2] = _mm512_mask_loadu_epi8(vzero, mask_load, input8 + i + 10);
-	//	vj[3] = _mm512_mask_loadu_epi8(vzero, mask_load, input8 + i + 11);
-	//	vj[4] = _mm512_mask_loadu_epi8(vzero, mask_load, input8 + i + 12);
-	//	vj[5] = _mm512_mask_loadu_epi8(vzero, mask_load, input8 + i + 13);
-	//	vj[6] = _mm512_mask_loadu_epi8(vzero, mask_load, input8 + i + 14);
-	//	vj[7] = _mm512_mask_loadu_epi8(vzero, mask_load, input8 + i + 15);
-
-	
-//        char *kmer_fwd = seq + i;
-//        char *kmer_rev = seqRev + length - i - kmerSize;
 
 		vi[0] = _mm512_mask_loadu_epi8(vzero, mask_load, memcmp(input8 + i + 0, input8_rev + length - i - 0 - kmerSize, kmerSize) <= 0 ? input8 + i + 0 : input8_rev + length - i - 0 - kmerSize);
 		vi[1] = _mm512_mask_loadu_epi8(vzero, mask_load, memcmp(input8 + i + 1, input8_rev + length - i - 1 - kmerSize, kmerSize) <= 0 ? input8 + i + 1 : input8_rev + length - i - 1 - kmerSize);
@@ -665,23 +637,6 @@ void addMinHashes(MinHashHeap & minHashHeap, char * seq, uint64_t length, const 
 		vj[6] = _mm512_mask_loadu_epi8(vzero, mask_load, memcmp(input8 + i + 14, input8_rev + length - i - 14 - kmerSize, kmerSize) <= 0 ? input8 + i + 14 : input8_rev + length - i - 14 - kmerSize);
 		vj[7] = _mm512_mask_loadu_epi8(vzero, mask_load, memcmp(input8 + i + 15, input8_rev + length - i - 15 - kmerSize, kmerSize) <= 0 ? input8 + i + 15 : input8_rev + length - i - 15 - kmerSize);
 
-	//	vk[0] = _mm512_mask_loadu_epi8(vzero, mask_load, memcmp(input8 + i + 16 + 0, input8_rev + length - i - 16 - 0 - kmerSize, kmerSize) <= 0 ? input8 + i + 16 + 0 : input8_rev + length - i - 16 - 0 - kmerSize);
-	//	vk[1] = _mm512_mask_loadu_epi8(vzero, mask_load, memcmp(input8 + i + 16 + 1, input8_rev + length - i - 16 - 1 - kmerSize, kmerSize) <= 0 ? input8 + i + 16 + 1 : input8_rev + length - i - 16 - 1 - kmerSize);
-	//	vk[2] = _mm512_mask_loadu_epi8(vzero, mask_load, memcmp(input8 + i + 16 + 2, input8_rev + length - i - 16 - 2 - kmerSize, kmerSize) <= 0 ? input8 + i + 16 + 2 : input8_rev + length - i - 16 - 2 - kmerSize);
-	//	vk[3] = _mm512_mask_loadu_epi8(vzero, mask_load, memcmp(input8 + i + 16 + 3, input8_rev + length - i - 16 - 3 - kmerSize, kmerSize) <= 0 ? input8 + i + 16 + 3 : input8_rev + length - i - 16 - 3 - kmerSize);
-	//	vk[4] = _mm512_mask_loadu_epi8(vzero, mask_load, memcmp(input8 + i + 16 + 4, input8_rev + length - i - 16 - 4 - kmerSize, kmerSize) <= 0 ? input8 + i + 16 + 4 : input8_rev + length - i - 16 - 4 - kmerSize);
-	//	vk[5] = _mm512_mask_loadu_epi8(vzero, mask_load, memcmp(input8 + i + 16 + 5, input8_rev + length - i - 16 - 5 - kmerSize, kmerSize) <= 0 ? input8 + i + 16 + 5 : input8_rev + length - i - 16 - 5 - kmerSize);
-	//	vk[6] = _mm512_mask_loadu_epi8(vzero, mask_load, memcmp(input8 + i + 16 + 6, input8_rev + length - i - 16 - 6 - kmerSize, kmerSize) <= 0 ? input8 + i + 16 + 6 : input8_rev + length - i - 16 - 6 - kmerSize);
-	//	vk[7] = _mm512_mask_loadu_epi8(vzero, mask_load, memcmp(input8 + i + 16 + 7, input8_rev + length - i - 16 - 7 - kmerSize, kmerSize) <= 0 ? input8 + i + 16 + 7 : input8_rev + length - i - 16 - 7 - kmerSize);
-
-	//	vl[0] = _mm512_mask_loadu_epi8(vzero, mask_load, memcmp(input8 + i + 24 + 0, input8_rev + length - i - 24 - 0 - kmerSize, kmerSize) <= 0 ? input8 + i + 24 + 0 : input8_rev + length - i - 24 - 0 - kmerSize);
-	//	vl[1] = _mm512_mask_loadu_epi8(vzero, mask_load, memcmp(input8 + i + 24 + 1, input8_rev + length - i - 24 - 1 - kmerSize, kmerSize) <= 0 ? input8 + i + 24 + 1 : input8_rev + length - i - 24 - 1 - kmerSize);
-	//	vl[2] = _mm512_mask_loadu_epi8(vzero, mask_load, memcmp(input8 + i + 24 + 2, input8_rev + length - i - 24 - 2 - kmerSize, kmerSize) <= 0 ? input8 + i + 24 + 2 : input8_rev + length - i - 24 - 2 - kmerSize);
-	//	vl[3] = _mm512_mask_loadu_epi8(vzero, mask_load, memcmp(input8 + i + 24 + 3, input8_rev + length - i - 24 - 3 - kmerSize, kmerSize) <= 0 ? input8 + i + 24 + 3 : input8_rev + length - i - 24 - 3 - kmerSize);
-	//	vl[4] = _mm512_mask_loadu_epi8(vzero, mask_load, memcmp(input8 + i + 24 + 4, input8_rev + length - i - 24 - 4 - kmerSize, kmerSize) <= 0 ? input8 + i + 24 + 4 : input8_rev + length - i - 24 - 4 - kmerSize);
-	//	vl[5] = _mm512_mask_loadu_epi8(vzero, mask_load, memcmp(input8 + i + 24 + 5, input8_rev + length - i - 24 - 5 - kmerSize, kmerSize) <= 0 ? input8 + i + 24 + 5 : input8_rev + length - i - 24 - 5 - kmerSize);
-	//	vl[6] = _mm512_mask_loadu_epi8(vzero, mask_load, memcmp(input8 + i + 24 + 6, input8_rev + length - i - 24 - 6 - kmerSize, kmerSize) <= 0 ? input8 + i + 24 + 6 : input8_rev + length - i - 24 - 6 - kmerSize);
-	//	vl[7] = _mm512_mask_loadu_epi8(vzero, mask_load, memcmp(input8 + i + 24 + 7, input8_rev + length - i - 24 - 7 - kmerSize, kmerSize) <= 0 ? input8 + i + 24 + 7 : input8_rev + length - i - 24 - 7 - kmerSize);
 
 
 		transpose8_epi64(&vi[0], &vi[1], &vi[2], &vi[3], &vi[4], &vi[5], &vi[6], &vi[7]); 
@@ -727,63 +682,49 @@ void addMinHashes(MinHashHeap & minHashHeap, char * seq, uint64_t length, const 
 		minHashHeap.tryInsert(hash);
 
 	}
+//============================================================================================================================================================
 
-//	hash_u hash;
-//	for(int i = 0; i < n_kmers; i++){
-//		hash.hash64 = res[i * 2];
-//		//cout << hash.hash64 << endl;
-//		minHashHeap.tryInsert(hash);
-//	}
-//	_mm_free(res);
-	
-
+#else
+//--------------------------------------------------------------------------------------------------------------------
+    for ( uint64_t i = 0; i < length - kmerSize + 1; i++ )
+    {
+		// repeatedly skip kmers with bad characters
+		//
+		bool bad = false;
+		//
+		for ( uint64_t j = i; j < i + kmerSize && i + kmerSize <= length; j++ )
+		{
+			if ( ! parameters.alphabet[seq[j]] )
+			{
+				i = j; // skip to past the bad character
+				bad = true;
+				break;
+			}
+		}
+		//
+		if ( bad )
+		{
+			continue;
+		}
+		//	
+		if ( i + kmerSize > length )
+		{
+			// skipped to end
+			break;
+		}
+            
+        const char *kmer_fwd = seq + i;
+        const char *kmer_rev = seqRev + length - i - kmerSize;
+        const char * kmer = (noncanonical || memcmp(kmer_fwd, kmer_rev, kmerSize) <= 0) ? kmer_fwd : kmer_rev;
+        bool filter = false;
+        
+        hash_u hash = getHash(kmer, kmerSize, parameters.seed, parameters.use64);
+        
+		minHashHeap.tryInsert(hash);
+    }
     
-//    for ( uint64_t i = 0; i < length - kmerSize + 1; i++ )
-//    {
-//		// repeatedly skip kmers with bad characters
-//		//
-//	//	bool bad = false;
-//	//	//
-//	//	for ( uint64_t j = i; j < i + kmerSize && i + kmerSize <= length; j++ )
-//	//	{
-//	//		if ( ! parameters.alphabet[seq[j]] )
-//	//		{
-//	//			i = j; // skip to past the bad character
-//	//			bad = true;
-//	//			break;
-//	//		}
-//	//	}
-//	//	//
-//	//	if ( bad )
-//	//	{
-//	//		continue;
-//	//	}
-//	//	//	
-//	//	if ( i + kmerSize > length )
-//	//	{
-//	//		// skipped to end
-//	//		break;
-//	//	}
-//            
-//        //const char *kmer_fwd = seq + i;
-//        //const char *kmer_rev = seqRev + length - i - kmerSize;
-//
-//        char *kmer_fwd = seq + i;
-//        char *kmer_rev = seqRev + length - i - kmerSize;
-//	//	char kmer[64];
-//        const char * kmer = (noncanonical || memcmp(kmer_fwd, kmer_rev, kmerSize) <= 0) ? kmer_fwd : kmer_rev;
-//	   //vSeq = _mm512_mask_loadu_epi8(vzero, mask_load, kmer_fwd);
-//	   //vSeqRev = _mm512_mask_loadu_epi8(vzero, mask_load, kmer_rev);
-//	   //vmin = min512(vSeq, vSeqRev);
-//	   //_mm512_storeu_epi8(kmer, vmin);
-//	   //const char * kmer = (const char *) kmer_;
-//	   
-//        bool filter = false;
-//        
-//        hash_u hash = getHash(kmer, kmerSize, parameters.seed, parameters.use64);
-//        
-//		minHashHeap.tryInsert(hash);
-//    }
+//--------------------------------------------------------------------------------------------------------------------
+#endif
     
     if ( ! noncanonical )
     {
