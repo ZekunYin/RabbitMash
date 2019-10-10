@@ -69,7 +69,7 @@ private:
     
 void writeOutput(TriangleOutput * output, bool comment, bool edge, double & pValuePeakToSet, char * output1Buffer, std::fstream &output1File, double * output2Buffer, std::fstream & output2File) const;
     //void writeOutput(TriangleOutput * output, bool comment, bool edge, double & pValuePeakToSet, double * outputBuffer, std::fstream & outputFile) const;
-    void writeOutput(TriangleOutput * output, bool comment, bool edge, double & pValuePeakToSet) const;
+void writeOutput(TriangleOutput * output, bool comment, bool edge, double & pValuePeakToSet) const;
 };
 
 CommandTriangle::TriangleOutput * compare(CommandTriangle::TriangleInput * input);
