@@ -9,9 +9,9 @@
 
 #include "MurmurHash3.h"
 
-#if defined (__ICC) || defined (__INTEL_COMPILER)
+//#if defined (__ICC) || defined (__INTEL_COMPILER)
 #include <immintrin.h>
-#endif
+//#endif
 
 //-----------------------------------------------------------------------------
 // Platform-specific functions and macros
@@ -335,7 +335,8 @@ void MurmurHash3_x64_128 ( const void * key, const int len,
   ((uint64_t*)out)[1] = h2;
 }
 
-#if defined (__ICC) || defined (__INTEL_COMPILER)
+//#if defined (__ICC) || defined (__INTEL_COMPILER)
+#if defined __AVX512F__ && defined __AVX512CD__
 void MurmurHash3_x64_128_avx512_8x16 ( __m512i  * vkey1, __m512i * vkey2, int pend_len, int len, uint32_t seed, void * out )
 {
 	const int nblocks = len / 16; //real blocks
@@ -529,11 +530,11 @@ void MurmurHash3_x64_128_avx512_8x16 ( __m512i  * vkey1, __m512i * vkey2, int pe
 	vh2_1 = _mm512_shuffle_i64x2(vk2_1,vk2_2,0x44);
 	vh2_2 = _mm512_shuffle_i64x2(vk2_1,vk2_2,0xEE);
 
-	_mm512_storeu_epi64((uint64_t*)out, vh1_1);
-	_mm512_storeu_epi64(&((uint64_t*)out)[8], vh1_2);
+	_mm512_storeu_si512((uint64_t*)out, vh1_1);
+	_mm512_storeu_si512(&((uint64_t*)out)[8], vh1_2);
 
-	_mm512_storeu_epi64(&((uint64_t*)out)[16], vh2_1);
-	_mm512_storeu_epi64(&((uint64_t*)out)[24], vh2_2);
+	_mm512_storeu_si512(&((uint64_t*)out)[16], vh2_1);
+	_mm512_storeu_si512(&((uint64_t*)out)[24], vh2_2);
 
 	//_mm512_storeu_epi64(h1, vh1);
 	//_mm512_storeu_epi64(h2, vh2);
@@ -847,18 +848,30 @@ void MurmurHash3_x64_128_avx512_8x32 ( __m512i  * vkey1, __m512i * vkey2, __m512
 	vh3_2 = _mm512_shuffle_i64x2(vk3_1,vk3_2,0xEE);
 	vh4_1 = _mm512_shuffle_i64x2(vk4_1,vk4_2,0x44);
 	vh4_2 = _mm512_shuffle_i64x2(vk4_1,vk4_2,0xEE);
+	
+	_mm512_storeu_si512((uint64_t*)out, vh1_1);
+	_mm512_storeu_si512(&((uint64_t*)out)[8], vh1_2);
 
-	_mm512_storeu_epi64((uint64_t*)out, vh1_1);
-	_mm512_storeu_epi64(&((uint64_t*)out)[8], vh1_2);
+	_mm512_storeu_si512(&((uint64_t*)out)[16], vh2_1);
+	_mm512_storeu_si512(&((uint64_t*)out)[24], vh2_2);
 
-	_mm512_storeu_epi64(&((uint64_t*)out)[16], vh2_1);
-	_mm512_storeu_epi64(&((uint64_t*)out)[24], vh2_2);
+	_mm512_storeu_si512(&((uint64_t*)out)[32], vh3_1);
+	_mm512_storeu_si512(&((uint64_t*)out)[40], vh3_2);
 
-	_mm512_storeu_epi64(&((uint64_t*)out)[32], vh3_1);
-	_mm512_storeu_epi64(&((uint64_t*)out)[40], vh3_2);
+	_mm512_storeu_si512(&((uint64_t*)out)[48], vh4_1);
+	_mm512_storeu_si512(&((uint64_t*)out)[56], vh4_2);
 
-	_mm512_storeu_epi64(&((uint64_t*)out)[48], vh4_1);
-	_mm512_storeu_epi64(&((uint64_t*)out)[56], vh4_2);
+//	_mm512_storeu_epi64((uint64_t*)out, vh1_1);
+//	_mm512_storeu_epi64(&((uint64_t*)out)[8], vh1_2);
+//
+//	_mm512_storeu_epi64(&((uint64_t*)out)[16], vh2_1);
+//	_mm512_storeu_epi64(&((uint64_t*)out)[24], vh2_2);
+//
+//	_mm512_storeu_epi64(&((uint64_t*)out)[32], vh3_1);
+//	_mm512_storeu_epi64(&((uint64_t*)out)[40], vh3_2);
+//
+//	_mm512_storeu_epi64(&((uint64_t*)out)[48], vh4_1);
+//	_mm512_storeu_epi64(&((uint64_t*)out)[56], vh4_2);
 	//_mm512_storeu_epi64(h1, vh1);
 	//_mm512_storeu_epi64(h2, vh2);
 
@@ -975,8 +988,8 @@ void MurmurHash3_x64_128_avx512_8x8 ( __m512i  * vkey, int pend_len, int len, ui
 	vh1 = _mm512_shuffle_i64x2(vk1,vk2,0x44);
 	vh2 = _mm512_shuffle_i64x2(vk1,vk2,0xEE);
 
-	_mm512_storeu_epi64((uint64_t*)out, vh1);
-	_mm512_storeu_epi64(&((uint64_t*)out)[8], vh2);
+	_mm512_storeu_si512((uint64_t*)out, vh1);
+	_mm512_storeu_si512(&((uint64_t*)out)[8], vh2);
 
 	//_mm512_storeu_epi64(h1, vh1);
 	//_mm512_storeu_epi64(h2, vh2);
@@ -987,7 +1000,21 @@ void MurmurHash3_x64_128_avx512_8x8 ( __m512i  * vkey, int pend_len, int len, ui
 	//}
 
 }
+#else 
+	#ifdef _AVX2__
+	// implement by avx2
+
+	#else
+		#ifdef __SSE4_1__
+		// implement by sse
+		#else
+		//implement without optimization
+		#endif
+	#endif
 #endif
+
+
+//#endif
 
 
 //-----------------------------------------------------------------------------

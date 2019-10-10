@@ -26,9 +26,9 @@
 #include <list>
 #include <string.h>
 
-#if defined (__ICC) || defined (__INTEL_COMPILER)
+//#if defined (__ICC) || defined (__INTEL_COMPILER)
 #include <immintrin.h>
-#endif
+//#endif
 
 #define SET_BINARY_MODE(file)
 #define CHUNK 16384
@@ -38,8 +38,8 @@ using namespace std;
 
 typedef map < Sketch::hash_t, vector<Sketch::PositionHash> > LociByHash_map;
 
-
-#if defined (__ICC) || defined (__INTEL_COMPILER)
+//#if defined (__ICC) || defined (__INTEL_COMPILER)
+#if defined __AVX512F__ && defined __AVX512CD__
 __m512i inline min512(__m512i v1, __m512i v2){
 	__mmask8 msk_gt, msk_lt;
 	msk_gt = _mm512_cmpgt_epi64_mask(v1, v2);
@@ -85,7 +85,19 @@ void inline transpose8_epi64(__m512i *row0, __m512i* row1, __m512i* row2,__m512i
 	*row6 = _mm512_shuffle_i64x2(__tt2,__tt6,0xEE);
 	*row7 = _mm512_shuffle_i64x2(__tt3,__tt7,0xEE);
 }
+#else 
+	#ifdef _AVX2__
+	// implement by avx2
+
+	#else
+		#ifdef __SSE4_1__
+		// implement by sse
+		#else
+		//implement without optimization
+		#endif
+	#endif
 #endif
+//#endif
 
 void Sketch::getAlphabetAsString(string & alphabet) const
 {
@@ -586,8 +598,11 @@ void addMinHashes(MinHashHeap & minHashHeap, char * seq, uint64_t length, const 
     	seqRev = new char[length];
         reverseComplement(seq, seqRev, length);
     }
-#if defined(__ICC) || defined(__INTEL_COMPILER)
+//#if defined(__ICC) || defined(__INTEL_COMPILER)
+#if defined __AVX512F__ && defined __AVX512CD__
 //============================================================================================================================================================
+	//cout << "use the intel avx512 " << endl;
+	//exit(0);
 	//addbyxxm
     //hash_u hash = getHash(kmer, kmerSize, parameters.seed, parameters.use64);
 //  const char * kmer = (noncanonical || memcmp(kmer_fwd, kmer_rev, kmerSize) <= 0) ? kmer_fwd : kmer_rev;
@@ -685,6 +700,14 @@ void addMinHashes(MinHashHeap & minHashHeap, char * seq, uint64_t length, const 
 //============================================================================================================================================================
 
 #else
+	#if defined __AVX2__
+		//implement by avx2 
+	#else
+		#if defined __SSE4_1__
+			//implement by sse
+		#else
+
+//implement by no optmization
 //--------------------------------------------------------------------------------------------------------------------
     for ( uint64_t i = 0; i < length - kmerSize + 1; i++ )
     {
@@ -722,9 +745,12 @@ void addMinHashes(MinHashHeap & minHashHeap, char * seq, uint64_t length, const 
         
 		minHashHeap.tryInsert(hash);
     }
+		#endif
+	#endif
+#endif
     
 //--------------------------------------------------------------------------------------------------------------------
-#endif
+//#endif
     
     if ( ! noncanonical )
     {
