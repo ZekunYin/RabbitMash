@@ -11,6 +11,7 @@
 #include "ThreadPool.h"
 #include "sketchParameterSetup.h"
 #include <math.h>
+#include <immintrin.h>
 
 #ifdef USE_BOOST
     #include <boost/math/distributions/binomial.hpp>
@@ -547,18 +548,20 @@ uint64_t u64_intersect_vector_avx512(const uint64_t *list1,  uint64_t size1, con
 		
 		uint64_t stop = size3 - 8;
 		//cout << "stop: " << stop <<  endl;
-		__m512i sv0  = u64_shuffle_vectors[ 0];//_mm512_set_epi32(0,15,14,13,12,11,10,9,8,7,6,5,4,3,2,1);
-		__m512i sv1  = u64_shuffle_vectors[ 1];//_mm512_set_epi32(1,0,15,14,13,12,11,10,9,8,7,6,5,4,3,2);
-		__m512i sv2  = u64_shuffle_vectors[ 2];//_mm512_set_epi32(2,1,0,15,14,13,12,11,10,9,8,7,6,5,4,3);
-		__m512i sv3  = u64_shuffle_vectors[ 3];//_mm512_set_epi32(3,2,1,0,15,14,13,12,11,10,9,8,7,6,5,4);
-		__m512i sv4  = u64_shuffle_vectors[ 4];//_mm512_set_epi32(4,3,2,1,0,15,14,13,12,11,10,9,8,7,6,5);
-		__m512i sv5  = u64_shuffle_vectors[ 5];//_mm512_set_epi32(5,4,3,2,1,0,15,14,13,12,11,10,9,8,7,6);
-		__m512i sv6  = u64_shuffle_vectors[ 6];//_mm512_set_epi32(6,5,4,3,2,1,0,15,14,13,12,11,10,9,8,7);
+		__m512i sv0  = _mm512_set_epi64(0,7,6,5,4,3,2,1);
+		__m512i sv1  = _mm512_set_epi64(1,0,7,6,5,4,3,2);
+		__m512i sv2  = _mm512_set_epi64(2,1,0,7,6,5,4,3);
+		__m512i sv3  = _mm512_set_epi64(3,2,1,0,7,6,5,4);
+		__m512i sv4  = _mm512_set_epi64(4,3,2,1,0,7,6,5);
+		__m512i sv5  = _mm512_set_epi64(5,4,3,2,1,0,7,6);
+		__m512i sv6  = _mm512_set_epi64(6,5,4,3,2,1,0,7);
 
 		//__m512i vzero = _mm512_setzero_epi32();
 		while(*i_a < st_a && *i_b < st_b){
-				__m512i v_a = _mm512_loadu_epi64((__m512i*)&list1[*i_a]);
-				__m512i v_b = _mm512_loadu_epi64((__m512i*)&list2[*i_b]);
+				__m512i v_a = _mm512_loadu_si512((__m512i*)&list1[*i_a]);
+				__m512i v_b = _mm512_loadu_si512((__m512i*)&list2[*i_b]);
+				
+
 
 				uint64_t a_max = list1[*i_a+7];
 				uint64_t b_max = list2[*i_b+7];
