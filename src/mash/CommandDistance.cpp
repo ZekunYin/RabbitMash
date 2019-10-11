@@ -11,7 +11,6 @@
 #include "ThreadPool.h"
 #include "sketchParameterSetup.h"
 #include <math.h>
-#include <immintrin.h>
 
 #ifdef USE_BOOST
 #include <boost/math/distributions/binomial.hpp>
@@ -589,8 +588,6 @@ namespace mash {
 
 		uint64_t stop = size3 - 8;
 		//cout << "stop: " << stop <<  endl;
-<<<<<<< HEAD
-=======
 		//__m512i sv0  = u64_shuffle_vectors[ 0];//_mm512_set_epi32(0,15,14,13,12,11,10,9,8,7,6,5,4,3,2,1);
 		//__m512i sv1  = u64_shuffle_vectors[ 1];//_mm512_set_epi32(1,0,15,14,13,12,11,10,9,8,7,6,5,4,3,2);
 		//__m512i sv2  = u64_shuffle_vectors[ 2];//_mm512_set_epi32(2,1,0,15,14,13,12,11,10,9,8,7,6,5,4,3);
@@ -599,7 +596,6 @@ namespace mash {
 		//__m512i sv5  = u64_shuffle_vectors[ 5];//_mm512_set_epi32(5,4,3,2,1,0,15,14,13,12,11,10,9,8,7,6);
 		//__m512i sv6  = u64_shuffle_vectors[ 6];//_mm512_set_epi32(6,5,4,3,2,1,0,15,14,13,12,11,10,9,8,7);
 
->>>>>>> 33b6319f00b872ae43c19c43fb4494c982e6a267
 		__m512i sv0  = _mm512_set_epi64(0,7,6,5,4,3,2,1);
 		__m512i sv1  = _mm512_set_epi64(1,0,7,6,5,4,3,2);
 		__m512i sv2  = _mm512_set_epi64(2,1,0,7,6,5,4,3);
@@ -610,59 +606,6 @@ namespace mash {
 
 		//__m512i vzero = _mm512_setzero_epi32();
 		while(*i_a < st_a && *i_b < st_b){
-<<<<<<< HEAD
-				__m512i v_a = _mm512_loadu_si512((__m512i*)&list1[*i_a]);
-				__m512i v_b = _mm512_loadu_si512((__m512i*)&list2[*i_b]);
-				
-
-
-				uint64_t a_max = list1[*i_a+7];
-				uint64_t b_max = list2[*i_b+7];
-				//cout << "a " << *i_a << ": " << list1[*i_a+7] << endl;
-				//cout << "b " << *i_b << ": " << list2[*i_b+7] << endl;
-				//if(a_max <= b_max)
-				//	cout << "choose a" << endl;
-				//else
-				//	cout << "choose b" << endl;
-				//cout << endl;
-
-				*i_a += (a_max <= b_max) * 8;
-				*i_b += (a_max >= b_max) * 8;
-
-				__mmask16 cmp0 = _mm512_cmpeq_epu64_mask(v_a, v_b);
-				__m512i rot0 = _mm512_permutexvar_epi64(sv0, v_b);
-				__mmask16 cmp1 = _mm512_cmpeq_epu64_mask(v_a, rot0);
-				__m512i rot1 = _mm512_permutexvar_epi64(sv1, v_b);
-				__mmask16 cmp2 = _mm512_cmpeq_epu64_mask(v_a, rot1);
-				__m512i rot2 = _mm512_permutexvar_epi64(sv2, v_b);
-				__mmask16 cmp3 = _mm512_cmpeq_epu64_mask(v_a, rot2);
-				cmp0 = _mm512_kor(_mm512_kor(cmp0, cmp1), _mm512_kor(cmp2, cmp3));
-
-				__m512i rot3 = _mm512_permutexvar_epi64(sv3, v_b);
-				__mmask16 cmp4 = _mm512_cmpeq_epu64_mask(v_a, rot3);
-				__m512i rot4 = _mm512_permutexvar_epi64(sv4, v_b);
-				__mmask16 cmp5 = _mm512_cmpeq_epu64_mask(v_a, rot4);
-				__m512i rot5 = _mm512_permutexvar_epi64(sv5, v_b);
-				__mmask16 cmp6 = _mm512_cmpeq_epu64_mask(v_a, rot5);
-				__m512i rot6 = _mm512_permutexvar_epi64(sv6, v_b);
-				__mmask16 cmp7 = _mm512_cmpeq_epu64_mask(v_a, rot6);
-				cmp4 = _mm512_kor(_mm512_kor(cmp4, cmp5), _mm512_kor(cmp6, cmp7));
-
-
-				cmp0 = _mm512_kor(cmp0, cmp4);
-				
-				//_mm512_mask_compressstoreu_epi64(&result[count], cmp0, v_a);
-				//__m512i vres = _mm512_mask_compress_epi64(_mm512_setzero_epi32(), cmp0, v_a);
-				//if(cmp0 > 0)
-				//	inspect(vres);
-				count += _mm_popcnt_u64(cmp0);
-				if(*i_a + *i_b - count >= stop){
-					count -= _mm_popcnt_u64(cmp0);
-					*i_a -= (a_max <= b_max) * 8;
-					*i_b -= (a_max >= b_max) * 8;
-					break;
-				}
-=======
 			//__m512i v_a = _mm512_loadu_epi64((__m512i*)&list1[*i_a]);
 			//__m512i v_b = _mm512_loadu_epi64((__m512i*)&list2[*i_b]);
 			__m512i v_a = _mm512_loadu_si512((__m512i*)&list1[*i_a]);
@@ -714,7 +657,6 @@ namespace mash {
 				*i_b -= (a_max >= b_max) * 8;
 				break;
 			}
->>>>>>> 33b6319f00b872ae43c19c43fb4494c982e6a267
 
 		}
 		//cout << "avx512 i_a: " << *i_a << endl;

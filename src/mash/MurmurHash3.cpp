@@ -848,11 +848,7 @@ void MurmurHash3_x64_128_avx512_8x32 ( __m512i  * vkey1, __m512i * vkey2, __m512
 	vh3_2 = _mm512_shuffle_i64x2(vk3_1,vk3_2,0xEE);
 	vh4_1 = _mm512_shuffle_i64x2(vk4_1,vk4_2,0x44);
 	vh4_2 = _mm512_shuffle_i64x2(vk4_1,vk4_2,0xEE);
-<<<<<<< HEAD
-
-=======
 	
->>>>>>> 33b6319f00b872ae43c19c43fb4494c982e6a267
 	_mm512_storeu_si512((uint64_t*)out, vh1_1);
 	_mm512_storeu_si512(&((uint64_t*)out)[8], vh1_2);
 
@@ -864,8 +860,6 @@ void MurmurHash3_x64_128_avx512_8x32 ( __m512i  * vkey1, __m512i * vkey2, __m512
 
 	_mm512_storeu_si512(&((uint64_t*)out)[48], vh4_1);
 	_mm512_storeu_si512(&((uint64_t*)out)[56], vh4_2);
-<<<<<<< HEAD
-=======
 
 //	_mm512_storeu_epi64((uint64_t*)out, vh1_1);
 //	_mm512_storeu_epi64(&((uint64_t*)out)[8], vh1_2);
@@ -878,7 +872,6 @@ void MurmurHash3_x64_128_avx512_8x32 ( __m512i  * vkey1, __m512i * vkey2, __m512
 //
 //	_mm512_storeu_epi64(&((uint64_t*)out)[48], vh4_1);
 //	_mm512_storeu_epi64(&((uint64_t*)out)[56], vh4_2);
->>>>>>> 33b6319f00b872ae43c19c43fb4494c982e6a267
 	//_mm512_storeu_epi64(h1, vh1);
 	//_mm512_storeu_epi64(h2, vh2);
 
