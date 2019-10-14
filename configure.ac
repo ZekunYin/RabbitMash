@@ -33,6 +33,7 @@ then
 	AC_MSG_ERROR([Cap'n Proto compiler (capnp) not found.])
 fi
 
+
 CPPFLAGS="-I$with_capnp/include -std=c++14"
 
 AC_CHECK_HEADER(capnp/common.h, [result=1], [result=0])
@@ -73,6 +74,16 @@ else
     AC_SUBST(mathinc, $with_boost/include)
     AC_SUBST(amcppflags, "-DUSE_BOOST")
 fi
+
+AC_ARG_ENABLE(simd, AS_HELP_STRING([--enable-simd], [enable simd(default=yes)]), [enable_simd=${enableval}], [enable_simd=yes])       
+
+if test "x$enable_simd" == "xyes"
+then 
+	CPPFLAGS="$CPPFLAGS -march=native"
+	AC_MSG_NOTICE([simd CPPFLAGS: $CPPFLAGS])
+fi
+
+AC_MSG_NOTICE([CPPFLAGS: $CPPFLAGS])
 
 AC_SUBST(capnp, $with_capnp)
 

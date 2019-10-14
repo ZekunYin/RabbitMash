@@ -48,6 +48,22 @@ namespace mash {
 			print();
 			return 0;
 		}
+#if defined __AVX512F__ && defined __AVX512CD__
+		cerr << "Using AVX512 instructions" << endl;
+#else 
+#if defined __AVX2__
+		cerr << "Using AVX2 instructions" << endl;
+		//implement by avx2
+#else
+#if defined __SSE4_1__
+		cerr << "Using SSE4 instructions" << endl;
+		//implement by sse
+#else
+		cerr << "No SIMD instructions used" << endl;
+		//implement without optimization
+#endif
+#endif
+#endif
 
 		int threads = options.at("threads").getArgumentAsNumber();
 		bool list = options.at("list").active;
