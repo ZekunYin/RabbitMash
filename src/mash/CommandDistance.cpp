@@ -53,11 +53,15 @@ namespace mash {
 #else 
 #if defined __AVX2__
 		cerr << "Using AVX2 instructions" << endl;
-		//implement by avx2
+		cerr << "Not implemented yet! Please use:" << endl;
+		cerr << "./configure --disable-simd" << endl;
+		//TODO: implement by avx2
 #else
 #if defined __SSE4_1__
 		cerr << "Using SSE4 instructions" << endl;
-		//implement by sse
+		cerr << "Not implemented yet! Please use:" << endl;
+		cerr << "./configure --disable-simd" << endl;
+		//TODO:implement by sse
 #else
 		cerr << "No SIMD instructions used" << endl;
 		//implement without optimization
