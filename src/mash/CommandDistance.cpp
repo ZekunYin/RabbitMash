@@ -83,6 +83,7 @@ namespace mash {
 		{
 			return 1;
 		}
+		//parameters.use64 = false;
 
 		Sketch sketchRef;
 
@@ -366,9 +367,11 @@ namespace mash {
 
 		//#if defined (__ICC) || defined (__INTEL_COMPILER)
 #if defined __AVX512F__ && defined __AVX512CD__
+		//if(parameters.use64)
 		if(hashesSortedRef.get64())
 		{
-			//TODO:only for uint64
+			//cerr << "implement the 64bit avx512 addbyxxm " << endl;
+			//exit(0);
 			common = u64_intersect_vector_avx512((uint64_t*)hashesSortedRef.hashes64.data(), hashesSortedRef.size(), (uint64_t*)hashesSortedQry.hashes64.data(), hashesSortedQry.size(), sketchSize, &i, &j);
 
 			denom = i + j - common;
@@ -379,35 +382,13 @@ namespace mash {
 			//cout << "hash i: " << (uint64_t)hashesSortedRef.at(i).hash64 << endl;
 			//cout << "hash j: " << (uint64_t)hashesSortedQry.at(j).hash64 << endl;
 		}
-		else{
-
-			while ( denom < sketchSize && i < hashesSortedRef.size() && j < hashesSortedQry.size() )
-			{
-				if ( hashLessThan(hashesSortedRef.at(i), hashesSortedQry.at(j), hashesSortedRef.get64()) )
-				{
-					i++;
-				}
-				else if ( hashLessThan(hashesSortedQry.at(j), hashesSortedRef.at(i), hashesSortedRef.get64()) )
-				{
-					j++;
-				}
-				else
-				{
-					//		cout << "res: " << (uint64_t)hashesSortedRef.at(i).hash64 << endl;
-					i++;
-					j++;
-					common++;
-				}
-
-				denom++;
-			}
-			//cout << "denom: " << denom << endl;
-			//cout << "common: " << common << endl;
-			//cout << "i: " << i<< endl;
-			//cout << "j: " << j<< endl;
-			//cout << "hash i: " << (uint64_t)hashesSortedRef.at(i).hash64 << endl;
-			//cout << "hash j: " << (uint64_t)hashesSortedQry.at(j).hash64 << endl;
-		} 
+		else //if(hashesSortedRef.get32())
+		{
+			//cerr << "implement the 32bit avx512 addbyxxm " << endl;
+			//exit(0);
+			common = u32_intersect_vector_avx512((uint32_t*)hashesSortedRef.hashes32.data(), hashesSortedRef.size(), (uint32_t*)hashesSortedQry.hashes32.data(), hashesSortedQry.size(), sketchSize, &i, &j);
+			denom = i + j - common;
+		}
 #else
 #ifdef _AVX2__
 		// implement by avx2
@@ -698,6 +679,200 @@ namespace mash {
 		return count;
 
 	}
+
+uint64_t u32_intersect_scalar_stop(const uint32_t *list1, uint32_t size1, const uint32_t *list2, uint32_t size2, uint32_t size3,
+									uint64_t *i_a, uint64_t *i_b){
+		uint64_t counter=0;
+		const uint32_t *end1 = list1+size1, *end2 = list2+size2;
+		*i_a = 0;
+		*i_b = 0;
+		//uint64_t stop = 0;
+		// hard to get only the loop instructions, now only a tiny check at the top wrong
+#if IACA_INTERSECT_SCALAR
+		IACA_START
+#endif
+				while(list1 != end1 && list2 != end2 ){
+						if(*list1 < *list2){
+								list1++;
+								(*i_a)++;
+								size3--;
+						}else if(*list1 > *list2){
+								list2++; 
+								(*i_b)++;
+								size3--;
+						}else{
+								//result[counter++] = *list1;
+								counter++;
+								list1++; list2++; 
+								(*i_a)++;
+								(*i_b)++;
+								size3--;
+						}
+						if(size3 == 0) break;
+				}
+#if IACA_INTERSECT_SCALAR
+		IACA_END
+#endif
+				return counter;
+}
+
+static /*constexpr*/ std::array<uint32_t,16*16> u32_prepare_shuffle_vectors(){
+		std::array<uint32_t,16*16> arr_unalign = {};
+		//std::array<uint64_t,8*7> arr = {};
+		uint32_t *arr = (uint32_t *)(((long)arr_unalign.data() + 64) & (~63));
+		//__m512i *temp;
+		uint64_t start=1;
+		for(uint64_t i=0; i<15; ++i){
+				uint64_t counter = start;
+				for(uint64_t j=0; j<16; ++j){
+						arr[i*16 + j] = counter % 16;
+						++counter;
+				}
+				++start;
+		}
+		return arr_unalign;
+}
+static const /*constexpr*/ auto u32_shuffle_vectors_arr = u32_prepare_shuffle_vectors();
+static const /*constexpr*/ __m512i *u32_shuffle_vectors_unalign = (__m512i*)u32_shuffle_vectors_arr.data();
+//static const /*constexpr*/ __m512i *u64_shuffle_vectors = (__m512i*)u64_shuffle_vectors_arr.data();
+static const __m512i *u32_shuffle_vectors = (__m512i *)(((long)u32_shuffle_vectors_unalign + 64) & (~63));
+//size3 is the stop threshold of the sum of size1&size2 
+uint32_t u32_intersect_vector_avx512(const uint32_t *list1, uint32_t size1, const uint32_t *list2, uint32_t size2, uint32_t size3, uint64_t *i_a, uint64_t *i_b){
+		//assert(size3 <= size1 + size2);
+		uint64_t count=0;
+		*i_a = 0;
+		*i_b = 0;
+		uint64_t st_a = (size1 / 16) * 16;
+		uint64_t st_b = (size2 / 16) * 16;
+	//	uint64_t stop = (size3 / 16) * 16;
+
+		uint64_t i_a_s, i_b_s;
+
+		if(size3 <= 16){
+			count += u32_intersect_scalar_stop(list1, size1, list2, size2, size3, i_a, i_b);
+			return count;
+		}
+		
+		uint64_t stop = size3 - 16;
+		//cout << "stop: " << stop <<  endl;
+		__m512i sv0   = _mm512_set_epi32(0,15,14,13,12,11,10,9,8,7,6,5,4,3,2,1); //u32_shuffle_vectors[0 ];
+		__m512i sv1   = _mm512_set_epi32(1,0,15,14,13,12,11,10,9,8,7,6,5,4,3,2); //u32_shuffle_vectors[1 ];
+		__m512i sv2   = _mm512_set_epi32(2,1,0,15,14,13,12,11,10,9,8,7,6,5,4,3); //u32_shuffle_vectors[2 ];
+		__m512i sv3   = _mm512_set_epi32(3,2,1,0,15,14,13,12,11,10,9,8,7,6,5,4); //u32_shuffle_vectors[3 ];
+		__m512i sv4   = _mm512_set_epi32(4,3,2,1,0,15,14,13,12,11,10,9,8,7,6,5); //u32_shuffle_vectors[4 ];
+		__m512i sv5   = _mm512_set_epi32(5,4,3,2,1,0,15,14,13,12,11,10,9,8,7,6); //u32_shuffle_vectors[5 ];
+		__m512i sv6   = _mm512_set_epi32(6,5,4,3,2,1,0,15,14,13,12,11,10,9,8,7); //u32_shuffle_vectors[6 ];
+		__m512i sv7   = _mm512_set_epi32(7,6,5,4,3,2,1,0,15,14,13,12,11,10,9,8); //u32_shuffle_vectors[7 ];
+		__m512i sv8   = _mm512_set_epi32(8,7,6,5,4,3,2,1,0,15,14,13,12,11,10,9); //u32_shuffle_vectors[8 ];
+		__m512i sv9   = _mm512_set_epi32(9,8,7,6,5,4,3,2,1,0,15,14,13,12,11,10); //u32_shuffle_vectors[9 ];
+		__m512i sv10  = _mm512_set_epi32(10,9,8,7,6,5,4,3,2,1,0,15,14,13,12,11); //u32_shuffle_vectors[10];
+		__m512i sv11  = _mm512_set_epi32(11,10,9,8,7,6,5,4,3,2,1,0,15,14,13,12); //u32_shuffle_vectors[11];
+		__m512i sv12  = _mm512_set_epi32(12,11,10,9,8,7,6,5,4,3,2,1,0,15,14,13); //u32_shuffle_vectors[12];
+		__m512i sv13  = _mm512_set_epi32(13,12,11,10,9,8,7,6,5,4,3,2,1,0,15,14); //u32_shuffle_vectors[13];
+		__m512i sv14  = _mm512_set_epi32(14,13,12,11,10,9,8,7,6,5,4,3,2,1,0,15); //u32_shuffle_vectors[14];
+		//__m512i vzero = _mm512_setzero_epi32();
+		while(*i_a < st_a && *i_b < st_b){
+				
+
+
+				uint32_t a_max = list1[*i_a+15];
+				uint32_t b_max = list2[*i_b+15];
+			
+				//cout << a_max << endl;
+				//cout << b_max << endl;
+
+				__m512i v_a = _mm512_loadu_si512((__m512i*)&(list1[*i_a]));
+				__m512i v_b = _mm512_loadu_si512((__m512i*)&(list2[*i_b]));
+				//cout << "a " << *i_a << ": " << list1[*i_a+7] << endl;
+				//cout << "b " << *i_b << ": " << list2[*i_b+7] << endl;
+				//if(a_max <= b_max)
+				//	cout << "choose a" << endl;
+				//else
+				//	cout << "choose b" << endl;
+				//cout << endl;
+
+				*i_a += (a_max <= b_max) * 16;
+				*i_b += (a_max >= b_max) * 16;
+
+				__mmask16 cmp0 = _mm512_cmpeq_epu32_mask(v_a, v_b);
+				__m512i rot0 = _mm512_permutexvar_epi32(sv0, v_b);
+				__mmask16 cmp1 = _mm512_cmpeq_epu32_mask(v_a, rot0);
+				__m512i rot1 = _mm512_permutexvar_epi32(sv1, v_b);
+				__mmask16 cmp2 = _mm512_cmpeq_epu32_mask(v_a, rot1);
+				__m512i rot2 = _mm512_permutexvar_epi32(sv2, v_b);
+				__mmask16 cmp3 = _mm512_cmpeq_epu32_mask(v_a, rot2);
+				cmp0 = _mm512_kor(_mm512_kor(cmp0, cmp1), _mm512_kor(cmp2, cmp3));
+
+				__m512i rot3 = _mm512_permutexvar_epi32(sv3, v_b);
+				__mmask16 cmp4 = _mm512_cmpeq_epu32_mask(v_a, rot3);
+				__m512i rot4 = _mm512_permutexvar_epi32(sv4, v_b);
+				__mmask16 cmp5 = _mm512_cmpeq_epu32_mask(v_a, rot4);
+				__m512i rot5 = _mm512_permutexvar_epi32(sv5, v_b);
+				__mmask16 cmp6 = _mm512_cmpeq_epu32_mask(v_a, rot5);
+				__m512i rot6 = _mm512_permutexvar_epi32(sv6, v_b);
+				__mmask16 cmp7 = _mm512_cmpeq_epu32_mask(v_a, rot6);
+				cmp4 = _mm512_kor(_mm512_kor(cmp4, cmp5), _mm512_kor(cmp6, cmp7));
+				
+				__m512i rot7 = _mm512_permutexvar_epi32(sv7, v_b);
+				cmp1 = _mm512_cmpeq_epu32_mask(v_a, rot7);
+				__m512i rot8 = _mm512_permutexvar_epi32(sv8, v_b);
+				cmp2 = _mm512_cmpeq_epu32_mask(v_a, rot8);
+				__m512i rot9 = _mm512_permutexvar_epi32(sv9, v_b);
+				cmp3 = _mm512_cmpeq_epu32_mask(v_a, rot9);
+				__m512i rot10 = _mm512_permutexvar_epi32(sv10, v_b);
+				cmp5 = _mm512_cmpeq_epu32_mask(v_a, rot10);
+				cmp1 = _mm512_kor(_mm512_kor(cmp1, cmp2), _mm512_kor(cmp3, cmp5));
+				
+				__m512i rot11 = _mm512_permutexvar_epi32(sv11, v_b);
+				cmp2 = _mm512_cmpeq_epu32_mask(v_a, rot11);
+				__m512i rot12 = _mm512_permutexvar_epi32(sv12, v_b);
+				cmp3 = _mm512_cmpeq_epu32_mask(v_a, rot12);
+				__m512i rot13 = _mm512_permutexvar_epi32(sv13, v_b);
+				cmp5 = _mm512_cmpeq_epu32_mask(v_a, rot13);
+				__m512i rot14 = _mm512_permutexvar_epi32(sv14, v_b);
+				cmp6 = _mm512_cmpeq_epu32_mask(v_a, rot14);
+				cmp2 = _mm512_kor(_mm512_kor(cmp2, cmp3), _mm512_kor(cmp5, cmp6));
+				
+				
+				cmp0 = _mm512_kor(_mm512_kor(cmp0, cmp4), _mm512_kor(cmp1, cmp2));
+			
+				
+
+
+				//_mm512_mask_compressstoreu_epi64(&result[count], cmp0, v_a);
+				//__m512i vres = _mm512_mask_compress_epi64(_mm512_setzero_epi32(), cmp0, v_a);
+				//if(cmp0 > 0)
+				//	inspect(vres);
+				count += _mm_popcnt_u32(cmp0);
+				if(*i_a + *i_b - count >= stop){
+					count -= _mm_popcnt_u32(cmp0);
+					*i_a -= (a_max <= b_max) * 16;
+					*i_b -= (a_max >= b_max) * 16;
+					break;
+				}
+
+		}
+		//cout << "avx512 i_a: " << *i_a << endl;
+		//cout << "avx512 i_b: " << *i_b << endl;
+		//cout << "avx512 count " << count << endl;
+		//cout << "avx512 list[i_a]: " << list1[*i_a] << endl;
+		//cout << "avx512 list[i_b]: " << list2[*i_b] << endl;
+		// intersect the tail using scalar intersection
+		//count += u64_intersect_scalar(list1+i_a, size1-i_a, list2+i_b, size2-i_b, result+count);
+		//if(size3 - *i_a - *i_b == 0){
+		//	return count;
+		//}
+		//else{
+			count += u32_intersect_scalar_stop(list1+*i_a, size1-*i_a, list2+*i_b, size2-*i_b, size3 - (*i_a+*i_b - count), &i_a_s, &i_b_s);
+
+			*i_a += i_a_s;
+			*i_b += i_b_s;
+		//}
+		return count;
+}
+
+
+
 #else
 #ifdef _AVX2__
 	// implement by avx2
