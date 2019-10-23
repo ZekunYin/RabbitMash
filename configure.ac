@@ -75,12 +75,28 @@ else
     AC_SUBST(amcppflags, "-DUSE_BOOST")
 fi
 
-AC_ARG_ENABLE(simd, AS_HELP_STRING([--enable-simd], [enable simd(default=yes)]), [enable_simd=${enableval}], [enable_simd=yes])       
+AC_ARG_ENABLE(simd, AS_HELP_STRING([--enable-simd], [enable simd(default=no)]), [enable_simd=${enableval}], [enable_simd=no])       
 
 if test "x$enable_simd" == "xyes"
 then 
 	CPPFLAGS="$CPPFLAGS -march=native"
 	AC_MSG_NOTICE([simd CPPFLAGS: $CPPFLAGS])
+fi
+
+AC_ARG_ENABLE(avx2, AS_HELP_STRING([--enable-avx2], [enable avx2(default=no)]), [enalbe_avx2=${enableval}], [enable_avx2=no])
+
+if test "x$enable_avx2" == "xyes"
+then
+	CPPFLAGS="$CPPFLAGS -mavx2"
+	AC_MSG_NOTICE([avx2 CPPFLAGS: $CPPFLAGS])
+fi
+
+AC_ARG_ENABLE(sse, AS_HELP_STRING([--enable-sse4], [enable sse(default=no)]), [enalbe_sse=${enableval}], [enable_sse=no])
+
+if test "x$enable_sse" == "xyes"
+then
+	CPPFLAGS="$CPPFLAGS -msse4"
+	AC_MSG_NOTICE([sse CPPFLAGS: $CPPFLAGS])
 fi
 
 AC_MSG_NOTICE([CPPFLAGS: $CPPFLAGS])
