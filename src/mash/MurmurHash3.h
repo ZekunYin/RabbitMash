@@ -41,8 +41,9 @@ void MurmurHash3_x64_128_avx512_8x32 ( __m512i  * vkey1, __m512i * vkey2, __m512
 
 void MurmurHash3_x64_128_avx512_8x8 ( __m512i * vkey, int pend_len, int len, uint32_t seed, void * out );
 #else
-	#ifdef _AVX2__
+	#ifdef __AVX2__
 	// implement by avx2
+void MurmurHash3_x64_128_avx2_8x4 (__m256i * vkey, int pend_len, int len, uint32_t seed, void *out);
 
 	#else
 		#ifdef __SSE4_1__

@@ -34,6 +34,25 @@ CommandSketch::CommandSketch()
 
 int CommandSketch::run() const
 {
+#if defined __AVX512F__ && defined __AVX512CD__
+		cerr << "Using AVX512 instructions" << endl;
+#else 
+#if defined __AVX2__
+		cerr << "Using AVX2 instructions" << endl;
+		//TODO: implement by avx2
+#else
+#if defined __SSE4_1__
+		cerr << "Using SSE4 instructions" << endl;
+		cerr << "Not implemented yet! Please use:" << endl;
+		cerr << "./configure --disable-simd" << endl;
+		//TODO:implement by sse
+#else
+		cerr << "No SIMD instructions used" << endl;
+		//implement without optimization
+#endif
+#endif
+#endif
+
     if ( arguments.size() == 0 || options.at("help").active )
     {
         print();

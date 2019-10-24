@@ -47,6 +47,7 @@ __m512i inline min512(__m512i v1, __m512i v2){
 
 	return (msk_gt < msk_lt) ? v1 : v2;
 }
+
 void inline transpose8_epi64(__m512i *row0, __m512i* row1, __m512i* row2,__m512i* row3, __m512i* row4, __m512i * row5,__m512i* row6,__m512i * row7)
 {
 	__m512i __t0,__t1,__t2,__t3,__t4,__t5,__t6,__t7;
@@ -86,8 +87,22 @@ void inline transpose8_epi64(__m512i *row0, __m512i* row1, __m512i* row2,__m512i
 	*row7 = _mm512_shuffle_i64x2(__tt3,__tt7,0xEE);
 }
 #else 
-	#ifdef _AVX2__
+#ifdef __AVX2__
 	// implement by avx2
+void inline transpose4_epi64(__m256i *row1, __m256i *row2, __m256i *row3, __m256i *row4)
+{
+	__m256i vt1, vt2, vt3, vt4;
+
+	vt1 = _mm256_unpacklo_epi64(*row1, *row2);
+	vt2 = _mm256_unpackhi_epi64(*row1, *row2);
+	vt3 = _mm256_unpacklo_epi64(*row3, *row4);
+	vt4 = _mm256_unpackhi_epi64(*row3, *row4);
+
+	*row1 =_mm256_permute2x128_si256(vt1, vt3, 0x20);
+	*row2 =_mm256_permute2x128_si256(vt2, vt4, 0x20);
+	*row3 =_mm256_permute2x128_si256(vt1, vt3, 0x31);
+	*row4 =_mm256_permute2x128_si256(vt2, vt4, 0x31);
+}
 
 	#else
 		#ifdef __SSE4_1__
@@ -573,6 +588,7 @@ void Sketch::createIndex()
 
 void addMinHashes(MinHashHeap & minHashHeap, char * seq, uint64_t length, const Sketch::Parameters & parameters)
 {
+
     int kmerSize = parameters.kmerSize;
     uint64_t mins = parameters.minHashesPerWindow;
     bool noncanonical = parameters.noncanonical;
@@ -701,7 +717,67 @@ void addMinHashes(MinHashHeap & minHashHeap, char * seq, uint64_t length, const 
 
 #else
 	#if defined __AVX2__
-		//implement by avx2 
+	//implement by avx2 
+	int pend_k = ((kmerSize - 1) / 16 + 1) * 16;
+	int n_kmers = length - kmerSize + 1;
+	int n_kmers_body = (n_kmers / 4) * 4;
+	const uint8_t * input8 = (const uint8_t *)seq;
+	const uint8_t * input8_rev = (const uint8_t *)seqRev;
+	uint64_t res[4 * 2];
+	uint64_t res2[2];
+	uint8_t kmer_buf[kmerSize];
+
+	__m256i vi[4];
+	//__m256i vzero = _mm256_set1_epi32(0x0);
+	uint8_t maskArr[32];
+	for(int i = 0; i < kmerSize; i++){
+		maskArr[i] = 0xff;
+	}
+	for(int i = kmerSize; i < 32; i++){
+		maskArr[i] = 0x0;
+	}
+	__m256i vmask = _mm256_loadu_si256((__m256i *)maskArr);
+	for(int i = 0; i < n_kmers_body - 1; i+=4){
+		vi[0] = _mm256_loadu_si256((__m256i *)(memcmp(input8 + i + 0, input8_rev + length - i - 0 - kmerSize, kmerSize) <= 0 ? input8 + i + 0 : input8_rev + length - i - 0 - kmerSize));
+		vi[1] = _mm256_loadu_si256((__m256i *)(memcmp(input8 + i + 1, input8_rev + length - i - 1 - kmerSize, kmerSize) <= 0 ? input8 + i + 1 : input8_rev + length - i - 1 - kmerSize));
+		vi[2] = _mm256_loadu_si256((__m256i *)(memcmp(input8 + i + 2, input8_rev + length - i - 2 - kmerSize, kmerSize) <= 0 ? input8 + i + 2 : input8_rev + length - i - 2 - kmerSize));
+		vi[3] = _mm256_loadu_si256((__m256i *)(memcmp(input8 + i + 3, input8_rev + length - i - 3 - kmerSize, kmerSize) <= 0 ? input8 + i + 3 : input8_rev + length - i - 3 - kmerSize));
+		vi[0] = _mm256_and_si256(vi[0], vmask);
+		vi[1] = _mm256_and_si256(vi[1], vmask);
+		vi[2] = _mm256_and_si256(vi[2], vmask);
+		vi[3] = _mm256_and_si256(vi[3], vmask);
+
+		transpose4_epi64(&vi[0], &vi[1], &vi[2], &vi[3]);
+
+		MurmurHash3_x64_128_avx2_8x4(vi, pend_k, kmerSize, 42, res);
+
+		hash_u hash;
+		for(int j = 0; j < 4; j++){
+			hash.hash64 = res[j * 2];
+			minHashHeap.tryInsert(hash);
+		}
+	}
+
+	for(int i = n_kmers_body; i < n_kmers; i++){
+		bool noRev = (memcmp(input8 + i, input8_rev + length -i - kmerSize, kmerSize) <= 0);
+		if(noRev){
+			for(int j = 0; j < kmerSize; j++){
+				kmer_buf[j] = input8[i + j];
+			}
+		}
+		else{
+			for(int j = 0; j < kmerSize; j++){
+				kmer_buf[j] = input8_rev[length - i - kmerSize + j];
+			}
+		}
+
+		MurmurHash3_x64_128(kmer_buf, kmerSize, 42, res2);
+		hash_u hash;
+		hash.hash64 = res2[0];
+		minHashHeap.tryInsert(hash);
+
+	}
+
 	#else
 		#if defined __SSE4_1__
 			//implement by sse

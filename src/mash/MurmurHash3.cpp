@@ -1001,8 +1001,193 @@ void MurmurHash3_x64_128_avx512_8x8 ( __m512i  * vkey, int pend_len, int len, ui
 
 }
 #else 
-	#ifdef _AVX2__
-	// implement by avx2
+#ifdef __AVX2__
+// implement by avx2
+inline __m256i avx2_mullo_epi64(__m256i a1, __m256i b1) 
+{
+	__m256i albl = _mm256_mul_epu32(a1, b1);
+
+	const int shuffle= 0xb1;
+	const int blendmask = 0x55;
+	__m256i a1shuffle = _mm256_shuffle_epi32(a1, shuffle); 
+	__m256i b1shuffle = _mm256_shuffle_epi32(b1, shuffle);
+
+	__m256i ahbl = _mm256_mul_epu32(a1shuffle, b1);
+	__m256i albh = _mm256_mul_epu32(a1, b1shuffle);
+
+	ahbl = _mm256_add_epi64(ahbl, albh);//sum of albh ahbl
+	ahbl = _mm256_shuffle_epi32(ahbl, shuffle);
+
+	albh = _mm256_blend_epi32(ahbl, albl, blendmask);//res without add hi32 of albl
+	__m256i zero = _mm256_set1_epi32(0);
+	albl = _mm256_blend_epi32(albl, zero, blendmask);
+
+	albh = _mm256_add_epi32(albh, albl);
+	return albh;
+
+}
+
+void MurmurHash3_x64_128_avx2_8x4 (__m256i * vkey, int pend_len, int len, uint32_t seed, void *out)
+{
+	const int nblocks = len / 16;
+
+	__m256i v5 = _mm256_set1_epi64x(5);
+	__m256i vlen = _mm256_set1_epi64x(len);
+
+
+	uint64_t h1[4];
+	uint64_t h2[4];
+	uint64_t tarr1[4];
+	uint64_t tarr2[4];
+	__m256i vh1;
+	__m256i vh2;
+	
+	__m256i vk1;
+	__m256i vk2;
+	__m256i vtmp1;
+	__m256i vtmp2;
+	__m256i vmul;
+
+	vh1 = _mm256_set1_epi64x(seed);
+	vh2 = _mm256_set1_epi64x(seed);
+
+  	const uint64_t c1 = BIG_CONSTANT(0x87c37b91114253d5);
+  	const uint64_t c2 = BIG_CONSTANT(0x4cf5ad432745937f);
+	__m256i vc1 = _mm256_set1_epi64x(c1);
+	__m256i vc2 = _mm256_set1_epi64x(c2);
+
+  	const uint64_t c3 = BIG_CONSTANT(0xff51afd7ed558ccd);
+  	const uint64_t c4 = BIG_CONSTANT(0xc4ceb9fe1a85ec53);
+	__m256i vc3 = _mm256_set1_epi64x(c3);
+	__m256i vc4 = _mm256_set1_epi64x(c4);
+
+	__m256i idx1 = _mm256_set_epi64x(0x6, 0x2, 0x4, 0x0);
+	__m256i idx2 = _mm256_set_epi64x(0x7, 0x3, 0x5, 0x1);
+
+//body
+	for(int i = 0; i < nblocks; i++)
+	{
+		vk1 = vkey[2 * i];
+		vk2 = vkey[2 * i + 1];
+		
+		//vk1 = _mm256_mullo_epi64(vk1, vc1);
+		vk1 = avx2_mullo_epi64(vk1, vc1);
+		//vk1 = _mm256_rol_epi64(vk1, 31);
+		vtmp1 = _mm256_srli_epi64(vk1, 64-31);
+		vtmp2 = _mm256_slli_epi64(vk1, 31);
+		vk1 = _mm256_or_si256(vtmp1, vtmp2);
+		//vk1 = _mm256_mullo_epi64(vk1, vc2);
+		vk1 = avx2_mullo_epi64(vk1, vc2);
+
+		vh1 = _mm256_xor_si256(vh1, vk1);
+		//vh1 = _mm256_rol_epi64(vh1, 27);
+		vtmp1 = _mm256_srli_epi64(vh1, 64-27);//37=64-27//with bugs
+		vtmp2 = _mm256_slli_epi64(vh1, 27);
+
+		//inspect64_256(vtmp1);//no why?????
+		//inspect64_256(vtmp2);//yes why????
+		vh1 = _mm256_or_si256(vtmp1, vtmp2);
+		//inspect64_256(vh1);//no
+
+		vh1 = _mm256_add_epi64(vh1, vh2);
+		//vh1 = _mm256_add_epi64(_mm256_mullo_epi64(vh1, v5), _mm256_set1_epi64x(0x52dce729));
+		vh1 = _mm256_add_epi64(avx2_mullo_epi64(vh1, v5), _mm256_set1_epi64x(0x52dce729));
+		//inspect64_256(vh1);
+
+		//vk2 = _mm256_mullo_epi64(vk2, vc2);
+		vk2 = avx2_mullo_epi64(vk2, vc2);
+		//vk2 = _mm256_rol_epi64(vk2, 33);
+		vtmp1 = _mm256_srli_epi64(vk2, 64-33);
+		vtmp2 = _mm256_slli_epi64(vk2, 33);
+		vk2 = _mm256_or_si256(vtmp1, vtmp2);
+		//vk2 = _mm256_mullo_epi64(vk2, vc1);
+		vk2 = avx2_mullo_epi64(vk2, vc1);
+		vh2 = _mm256_xor_si256(vh2, vk2);
+
+		//vh2 = _mm256_rol_epi64(vh2, 31);
+		vtmp1 = _mm256_srli_epi64(vh2, 64-31);
+		vtmp2 = _mm256_slli_epi64(vh2, 31);
+		vh2 = _mm256_or_si256(vtmp1, vtmp2);
+		vh2 = _mm256_add_epi64(vh2, vh1);
+		//vh2 = _mm256_add_epi64(_mm256_mullo_epi64(vh2, v5), _mm256_set1_epi64x(0x38495ab5));
+		vh2 = _mm256_add_epi64(avx2_mullo_epi64(vh2, v5), _mm256_set1_epi64x(0x38495ab5));
+	
+	}
+	
+	if(pend_len >len){
+		
+		vk1 = vkey[2 * nblocks];
+		vk2 = vkey[2 * nblocks + 1];
+
+		//vk2 = _mm256_mullo_epi64(vk2, vc2);
+		vk2 = avx2_mullo_epi64(vk2, vc2);
+		//vk2 = _mm256_rol_epi64(vk2, 33);
+		vtmp1 = _mm256_srli_epi64(vk2, 64-33);
+		vtmp2 = _mm256_slli_epi64(vk2, 33);
+		vk2 = _mm256_or_si256(vtmp1, vtmp2);
+		//vk2 = _mm256_mullo_epi64(vk2, vc1);
+		vk2 = avx2_mullo_epi64(vk2, vc1);
+		vh2 = _mm256_xor_si256(vh2, vk2);
+
+		//vk1 = _mm256_mullo_epi64(vk1, vc1);
+		vk1 = avx2_mullo_epi64(vk1, vc1);
+		//vk1 = _mm256_rol_epi64(vk1, 31);
+		vtmp1 = _mm256_srli_epi64(vk1, 64-31);
+		vtmp2 = _mm256_slli_epi64(vk1, 31);
+		vk1 = _mm256_or_si256(vtmp1, vtmp2);
+		//vk1 = _mm256_mullo_epi64(vk1, vc2);
+		vk1 = avx2_mullo_epi64(vk1, vc2);
+		vh1 = _mm256_xor_si256(vh1, vk1);
+	}
+
+	vh1 = _mm256_xor_si256(vh1, vlen);
+	vh2 = _mm256_xor_si256(vh2, vlen);
+	
+	vh1 = _mm256_add_epi64(vh1, vh2);
+	vh2 = _mm256_add_epi64(vh2, vh1);
+
+	vh1 = _mm256_xor_si256(vh1, _mm256_srli_epi64(vh1, 33));
+	//vh1 = _mm256_mullo_epi64(vh1, vc3);
+	vh1 = avx2_mullo_epi64(vh1, vc3);
+	vh1 = _mm256_xor_si256(vh1, _mm256_srli_epi64(vh1, 33));
+	//vh1 = _mm256_mullo_epi64(vh1, vc4);
+	vh1 = avx2_mullo_epi64(vh1, vc4);
+	vh1 = _mm256_xor_si256(vh1, _mm256_srli_epi64(vh1, 33));
+
+	vh2 = _mm256_xor_si256(vh2, _mm256_srli_epi64(vh2, 33));
+	//vh2 = _mm256_mullo_epi64(vh2, vc3);
+	vh2 = avx2_mullo_epi64(vh2, vc3);
+	vh2 = _mm256_xor_si256(vh2, _mm256_srli_epi64(vh2, 33));
+	//vh2 = _mm256_mullo_epi64(vh2, vc4);
+	vh2 = avx2_mullo_epi64(vh2, vc4);
+	vh2 = _mm256_xor_si256(vh2, _mm256_srli_epi64(vh2, 33));
+
+	vh1 = _mm256_add_epi64(vh1, vh2);
+	vh2 = _mm256_add_epi64(vh2, vh1);
+
+	//reorganize output
+	//vk1 = _mm256_permutex2var_epi64(vh1, idx1, vh2);//idx1 TODO
+	//vk2 = _mm256_permutex2var_epi64(vh1, idx2, vh2);//idx2 TODO
+	vk1 = _mm256_unpacklo_epi64(vh1, vh2);
+	vk2 = _mm256_unpackhi_epi64(vh1, vh2);
+
+	//vh1 = _mm256_shuffle_i64x2(vk1, vk2, 0x0);//0x44 TODO
+	//vh2 = _mm256_shuffle_i64x2(vk1, vk2, 0x3);//0xEE TODO
+	vh1 = _mm256_permute2x128_si256(vk1, vk2, 0x20);
+	vh2 = _mm256_permute2x128_si256(vk1, vk2, 0x31);
+	//inspect64_256(vh1);
+	//inspect64_256(vh2);
+
+	_mm256_storeu_si256((__m256i *)out, vh1);
+	_mm256_storeu_si256(&((__m256i *)out)[1], vh2);
+
+	//_mm256_storeu_epi64((uint64_t*)out, vh1);
+	//_mm256_storeu_epi64(&((uint64_t*)out)[4], vh2);
+
+	//_mm512_storeu_epi64((uint64_t*)out, vh1);
+	//_mm512_storeu_epi64(&((uint64_t*)out)[8], vh2);
+
+}
 
 	#else
 		#ifdef __SSE4_1__
