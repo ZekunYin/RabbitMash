@@ -99,9 +99,18 @@ uint64_t u64_intersect_vector_avx512(const uint64_t *list1,  uint64_t size1, con
 	#else 
 		#if defined __AVX2__
 			//implement by avx2
+
+            size_t u32_intersect_vector_avx2(const uint32_t *list1, uint32_t size1, const uint32_t *list2, uint32_t size2, uint32_t size3, uint64_t* i_a, uint64_t* i_b);
+
+            size_t u64_intersect_vector_avx2(const uint64_t *list1, uint64_t size1, const uint64_t *list2, uint64_t size2, uint64_t size3, uint64_t* i_a, uint64_t* i_b);
 		#else
 			#if defined __SSE4_1__
 			//implement by sse
+            uint64_t u64_intersection_vector_sse(const uint64_t *list1, uint64_t size1, const uint64_t *list2, uint64_t size2, uint64_t size3, uint64_t *i_a, uint64_t *i_b);
+
+
+            uint64_t u32_intersection_vector_sse(const uint32_t *list1, uint64_t size1, const uint32_t *list2, uint64_t size2, uint64_t size3, uint64_t *i_a, uint64_t *i_b);
+
 			#else
 			//implement without optimization
 			#endif

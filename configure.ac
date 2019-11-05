@@ -83,7 +83,7 @@ then
 	AC_MSG_NOTICE([simd CPPFLAGS: $CPPFLAGS])
 fi
 
-AC_ARG_ENABLE(avx2, AS_HELP_STRING([--enable-avx2], [enable avx2(default=no)]), [enalbe_avx2=${enableval}], [enable_avx2=no])
+AC_ARG_ENABLE(avx2, AS_HELP_STRING([--enable-avx2], [enable avx2(default=no)]), [enable_avx2=${enableval}], [enable_avx2=no])
 
 if test "x$enable_avx2" == "xyes"
 then
@@ -91,9 +91,9 @@ then
 	AC_MSG_NOTICE([avx2 CPPFLAGS: $CPPFLAGS])
 fi
 
-AC_ARG_ENABLE(sse, AS_HELP_STRING([--enable-sse4], [enable sse(default=no)]), [enalbe_sse=${enableval}], [enable_sse=no])
+AC_ARG_ENABLE(sse4, AS_HELP_STRING([--enable-sse4], [enable sse4(default=no)]), [enable_sse4=${enableval}], [enable_sse4=no])
 
-if test "x$enable_sse" == "xyes"
+if test "x$enable_sse4" == "xyes"
 then
 	CPPFLAGS="$CPPFLAGS -msse4"
 	AC_MSG_NOTICE([sse CPPFLAGS: $CPPFLAGS])
