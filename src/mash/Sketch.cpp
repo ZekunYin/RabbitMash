@@ -722,7 +722,7 @@ void Sketch::createIndex()
     kmerSpace = pow(parameters.alphabetSize, parameters.kmerSize);
 }
 
-void addMinHashes(MinHashHeap & minHashHeap, char * seq, uint64_t length, const Sketch::Parameters & parameters)
+void addMinHashes(MinHashHeap & minHashHeap, const char * seq, uint64_t length, const Sketch::Parameters & parameters)
 {
 
     int kmerSize = parameters.kmerSize;
@@ -735,13 +735,13 @@ void addMinHashes(MinHashHeap & minHashHeap, char * seq, uint64_t length, const 
     
     // uppercase TODO: alphabets?
     //
-    for ( uint64_t i = 0; i < length; i++ )
-    {
-        if ( ! parameters.preserveCase && seq[i] > 96 && seq[i] < 123 )
-        {
-            seq[i] -= 32;
-        }
-    }
+    //for ( uint64_t i = 0; i < length; i++ )
+    //{
+    //    if ( ! parameters.preserveCase && seq[i] > 96 && seq[i] < 123 )
+    //    {
+    //        seq[i] -= 32;
+    //    }
+    //}
     
     char * seqRev;
     
@@ -1758,21 +1758,21 @@ Sketch::SketchOutput * sketchChunk(Sketch::SketchInput * input)
 
 	input->fastaPool->Release(input->fachunk->chunk);
 
-	//for(int i = 0; i < output->references.size(); i++)
-	//{
-	//	if ( parameters.windowed )
-	//	{
-	//		//TODO: finish it
-	//		//output->positionHashesByReference.resize(1);
-	//		//getMinHashPositions(output->positionHashesByReference[0], input->seq, input->length, parameters, 0);
-	//	}
-	//	else
-	//	{
-	//	    MinHashHeap minHashHeap(parameters.use64, parameters.minHashesPerWindow, parameters.reads ? parameters.minCov : 1);
-    //	    addMinHashes(minHashHeap, output->references[i]->seq, output->references[i]->length, parameters);
-	//		setMinHashesForReference(output->references[i], minHashHeap);
-	//	}
-	//}
+	for(int i = 0; i < output->references.size(); i++)
+	{
+		if ( parameters.windowed )
+		{
+			//TODO: finish it
+			//output->positionHashesByReference.resize(1);
+			//getMinHashPositions(output->positionHashesByReference[0], input->seq, input->length, parameters, 0);
+		}
+		else
+		{
+		    MinHashHeap minHashHeap(parameters.use64, parameters.minHashesPerWindow, parameters.reads ? parameters.minCov : 1);
+    	    addMinHashes(minHashHeap, output->references[i].seq.c_str(), output->references[i].length, parameters);
+			setMinHashesForReference(output->references[i], minHashHeap);
+		}
+	}
 	
 	//delete input;	//segfault
 

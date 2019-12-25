@@ -244,7 +244,7 @@ private:
     std::string file;
 };
 
-void addMinHashes(MinHashHeap & minHashHeap, char * seq, uint64_t length, const Sketch::Parameters & parameters);
+void addMinHashes(MinHashHeap & minHashHeap, const char * seq, uint64_t length, const Sketch::Parameters & parameters);
 void getMinHashPositions(std::vector<Sketch::PositionHash> & loci, char * seq, uint32_t length, const Sketch::Parameters & parameters, int verbosity = 0);
 bool hasSuffix(std::string const & whole, std::string const & suffix);
 Sketch::SketchOutput * loadCapnp(Sketch::SketchInput * input);
