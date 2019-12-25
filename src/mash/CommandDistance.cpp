@@ -13,6 +13,7 @@
 #include <math.h>
 #include <emmintrin.h>
 #include <smmintrin.h>
+#include <immintrin.h>
 #ifdef USE_BOOST
 #include <boost/math/distributions/binomial.hpp>
 using namespace::boost::math;
