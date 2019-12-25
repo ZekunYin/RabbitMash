@@ -4,6 +4,10 @@
 //
 // See the LICENSE.txt file included with this software for license information.
 
+#include "fasta/FastaIO.h"
+#include "fasta/FastaStream.h"
+#include "fasta/FastaChunk.h"
+
 #include "Sketch.h"
 #include <unistd.h>
 #include <zlib.h>
@@ -292,7 +296,8 @@ int Sketch::initFromFiles(const vector<string> & files, const Parameters & param
 			}
 			else
 			{
-				if ( ! sketchFileBySequence(inStream, &threadPool) )
+				//if ( ! sketchFileBySequence(inStream, &threadPool) )
+				if ( ! sketchFileByChunk(inStream, &threadPool) )
 				{
 					cerr << "\nERROR: reading " << files[i] << "." << endl;
 					exit(1);
@@ -448,6 +453,63 @@ bool Sketch::sketchFileBySequence(FILE * file, ThreadPool<Sketch::SketchInput, S
 	return true;
 }
 
+bool Sketch::sketchFileByChunk(FILE * file, ThreadPool<Sketch::SketchInput, Sketch::SketchOutput> * threadPool)
+{
+	//gzFile fp = gzdopen(fileno(file), "r");
+	//kseq_t *seq = kseq_init(fp);
+	
+	mash::fa::FastaDataPool *fastaPool    = new mash::fa::FastaDataPool(32, 1<<26);
+	mash::fa::FastaFileReader *fileReader = new mash::fa::FastaFileReader(fileno(file));
+	mash::fa::FastaReader *fastaReader    = new mash::fa::FastaReader(*fileReader, *fastaPool);
+    int l;
+    int count = 0;
+	bool skipped = false;
+	
+	//while ((l = kseq_read(seq)) >= 0)
+	int nChunks = 0;
+	while(true)
+	{
+		//if ( l < parameters.kmerSize )
+		//{
+		//	skipped = true;
+		//	continue;
+		//}
+		
+		//if ( verbosity > 0 && parameters.windowed ) cout << '>' << seq->name.s << " (" << l << "nt)" << endl << endl;
+		//if (seq->comment.l) printf("comment: %s\n", seq->comment.s);
+		//printf("seq: %s\n", seq->seq.s);
+		//if (seq->qual.l) printf("qual: %s\n", seq->qual.s);
+		mash::fa::FastaChunk *fachunk = fastaReader->readNextChunk();
+		if(fachunk == NULL) break;
+
+		nChunks++;	
+		//
+		//memcpy(seqCopy, seq->seq.s, l);
+		
+		threadPool->runWhenThreadAvailable(new SketchInput(fachunk, fastaPool, parameters), sketchChunk);
+		
+		while ( threadPool->outputAvailable() )
+		{
+			useThreadOutput(threadPool->popOutputWhenAvailable());
+		}
+    	
+	}
+
+	cerr << "partNum: " << fastaPool->partNum << endl << flush;
+	while( fastaPool->partNum != 0 )
+	{
+	}
+
+	cerr << "partNum: " << fastaPool->partNum << endl << flush;
+	cerr << "nChunks: " << nChunks << endl << flush;
+	delete fastaReader;
+	delete fileReader;
+	delete fastaPool;
+
+
+	return true;
+}
+
 void Sketch::useThreadOutput(SketchOutput * output)
 {
 	references.insert(references.end(), output->references.begin(), output->references.end());
@@ -523,7 +585,7 @@ int Sketch::writeToCapnp(const char * file) const
     }
     
     int locusCount = 0;
-    
+   	cerr << "positionHashesByReference.size: " << positionHashesByReference.size() << endl; 
     for ( int i = 0; i < positionHashesByReference.size(); i++ )
     {
         locusCount += positionHashesByReference.at(i).size();
@@ -1597,6 +1659,40 @@ Sketch::SketchOutput * sketchSequence(Sketch::SketchInput * input)
 		setMinHashesForReference(reference, minHashHeap);
 	}
 	
+	return output;
+}
+
+Sketch::SketchOutput * sketchChunk(Sketch::SketchInput * input)
+{
+	const Sketch::Parameters & parameters = input->parameters;
+	
+	Sketch::SketchOutput * output = new Sketch::SketchOutput();
+	
+	input->fachunk->print();
+	input->fastaPool->Release(input->fachunk->chunk);
+
+	//cerr << "after release" << endl << flush;
+	//output->references.resize(1); //not 1 in each chunk
+	//Sketch::Reference & reference = output->references[0];
+	//
+	//reference.length = input->length;
+	//reference.name = input->name;
+	//reference.comment = input->comment;
+	//reference.hashesSorted.setUse64(parameters.use64);
+	//
+	//if ( parameters.windowed )
+	//{
+	//	output->positionHashesByReference.resize(1);
+	//	getMinHashPositions(output->positionHashesByReference[0], input->seq, input->length, parameters, 0);
+	//}
+	//else
+	//{
+	//    MinHashHeap minHashHeap(parameters.use64, parameters.minHashesPerWindow, parameters.reads ? parameters.minCov : 1);
+    //    addMinHashes(minHashHeap, input->seq, input->length, parameters);
+	//	setMinHashesForReference(reference, minHashHeap);
+	//}
+	
+	//delete input;	
 	return output;
 }
 

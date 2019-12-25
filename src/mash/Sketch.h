@@ -17,6 +17,10 @@
 #include "MinHashHeap.h"
 #include "ThreadPool.h"
 
+#include "fasta/FastaChunk.h"
+//#include "fasta/FastaIO.h"
+//#include "fasta/FastaStream.h"
+
 static const char * capnpHeader = "Cap'n Proto";
 static const int capnpHeaderLength = strlen(capnpHeader);
 
@@ -137,10 +141,12 @@ public:
         uint64_t length;
         HashList hashesSorted;
         std::vector<uint32_t> counts;
+		uint64_t gid; //for fasta IO
     };
     
-    struct SketchInput
+    class SketchInput
     {
+	public:
     	SketchInput(std::vector<std::string> fileNamesNew, char * seqNew, uint64_t lengthNew, const std::string & nameNew, const std::string & commentNew, const Sketch::Parameters & parametersNew)
     	:
     	fileNames(fileNamesNew),
@@ -151,9 +157,17 @@ public:
     	parameters(parametersNew)
     	{}
     	
+    	SketchInput(mash::fa::FastaChunk *fachunkNew, mash::fa::FastaDataPool *fastaPoolNew, const Sketch::Parameters & parametersNew)
+		:
+		fachunk(fachunkNew),
+		fastaPool(fastaPoolNew),
+		parameters(parametersNew)
+		{}
+		
+
     	~SketchInput()
     	{
-    		if ( seq != 0 )
+    		if ( seq != NULL )
     		{
 	    		delete [] seq;
 	    	}
@@ -161,7 +175,7 @@ public:
     	
     	std::vector<std::string> fileNames;
     	
-    	char * seq;
+    	char * seq = NULL;
     	
     	uint64_t length;
     	
@@ -169,6 +183,9 @@ public:
     	std::string comment;
     	
     	Sketch::Parameters parameters;
+		
+		mash::fa::FastaChunk *fachunk;
+		mash::fa::FastaDataPool *fastaPool;
     };
     
     struct SketchOutput
@@ -205,6 +222,7 @@ public:
     void setReferenceName(int i, const std::string name) {references[i].name = name;}
     void setReferenceComment(int i, const std::string comment) {references[i].comment = comment;}
 	bool sketchFileBySequence(FILE * file, ThreadPool<Sketch::SketchInput, Sketch::SketchOutput> * threadPool);
+	bool sketchFileByChunk(FILE * file, ThreadPool<Sketch::SketchInput, Sketch::SketchOutput> * threadPool);
 	void useThreadOutput(SketchOutput * output);
     void warnKmerSize(uint64_t lengthMax, const std::string & lengthMaxName, double randomChance, int kMin, int warningCount) const;
     bool writeToFile() const;
@@ -233,9 +251,24 @@ void setAlphabetFromString(Sketch::Parameters & parameters, const char * charact
 void setMinHashesForReference(Sketch::Reference & reference, const MinHashHeap & hashes);
 Sketch::SketchOutput * sketchFile(Sketch::SketchInput * input);
 Sketch::SketchOutput * sketchSequence(Sketch::SketchInput * input);
+Sketch::SketchOutput * sketchChunk(Sketch::SketchInput * input);
 
 int def(int fdSource, int fdDest, int level);
 int inf(int fdSource, int fdDest);
 void zerr(int ret);
+
+
+//for efficient fasta I/O
+//template<class SketchRes>
+//struct SeqInfo{
+//	
+//	uint64_t gid; //sequence global id		
+//	std::vector<SketchRes> sketchs; 
+//	bool is_complete;
+//
+//};
+//
+typedef Sketch::Reference OneSeqInfo;
+typedef std::vector<Sketch::Reference> SeqInfos;
 
 #endif
