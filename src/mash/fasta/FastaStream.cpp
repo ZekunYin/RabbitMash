@@ -20,7 +20,7 @@ namespace fa
 
 bool FastaFileReader::ReadNextChunk(FastaChunk* dataChunk_, SeqInfos& seqInfos)
 {
-	std::cout << "==================Next Chunk =========================" << std::endl;
+	//std::cout << "==================Next Chunk =========================" << std::endl;
 	FastaDataChunk *chunk_ = dataChunk_->chunk;
 	if (Eof())
 	{
@@ -43,8 +43,8 @@ bool FastaFileReader::ReadNextChunk(FastaChunk* dataChunk_, SeqInfos& seqInfos)
 
 	// read the next chunk
 	int64 r = this->Read(data + chunk_->size, toRead);
-	std::cout << "r is :" << r << std::endl;
-	std::cout << "toRead: " << toRead << std::endl;
+	//std::cout << "r is :" << r << std::endl;
+	//std::cout << "toRead: " << toRead << std::endl;
 	
 	if (r > 0)
 	{
@@ -179,7 +179,7 @@ uint64 FastaFileReader::FindCutPos(FastaChunk* dataChunk_, uchar* data_, const u
 	dataChunk_->nseqs = this->totalSeqs - dataChunk_->start;
 	dataChunk_->end = this->totalSeqs - 1;
 
-	if(cut_ != 0) std::cout << "cut: " << cut_ << std::endl;
+	//if(cut_ != 0) std::cout << "cut: " << cut_ << std::endl;
 
 	return cut_ ? cut_ : size_;	
 }

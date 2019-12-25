@@ -505,13 +505,13 @@ bool Sketch::sketchFileByChunk(FILE * file, ThreadPool<Sketch::SketchInput, Sket
     	
 	}
 
-	cerr << "partNum: " << fastaPool->partNum << endl << flush;
+	//cerr << "partNum: " << fastaPool->partNum << endl << flush;
 	while( fastaPool->partNum != 0 )
 	{
 	}
 
-	cerr << "partNum: " << fastaPool->partNum << endl << flush;
-	cerr << "nChunks: " << nChunks << endl << flush;
+	//cerr << "partNum: " << fastaPool->partNum << endl << flush;
+	//cerr << "nChunks: " << nChunks << endl << flush;
 	delete fastaReader;
 	delete fileReader;
 	delete fastaPool;
@@ -1742,7 +1742,7 @@ Sketch::SketchOutput * sketchChunk(Sketch::SketchInput * input)
 	
 	Sketch::SketchOutput * output = new Sketch::SketchOutput();
 	
-	input->fachunk->print();
+	//input->fachunk->print();
 
 	/***********Chunk Format**************/
 
@@ -1752,7 +1752,7 @@ Sketch::SketchOutput * sketchChunk(Sketch::SketchInput * input)
 		output->references[i].seq = "";
 		//cout << "name: " << output->references[i].name << endl;
 		//cout << "seq:  " << output->references[i].seq  << endl;
-		cout << "gid:  " << output->references[i].gid  << endl;
+		//cout << "gid:  " << output->references[i].gid  << endl;
 	}	
 	/*************************************/
 

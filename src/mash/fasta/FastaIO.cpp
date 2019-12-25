@@ -79,8 +79,8 @@ string getSequence(FastaDataChunk * &chunk, uint64 &pos){	//addbyxxm
 		}
 	}
 	if(pos >= chunk->size){
-		cerr << "start pos: " << start_pos << endl;
-		cerr << "pos: " << pos << endl;
+		//cerr << "start pos: " << start_pos << endl;
+		//cerr << "pos: " << pos << endl;
 		return string(data+start_pos, pos-start_pos-2); //FIXME  should not be -2
 	}
 	else
@@ -108,7 +108,7 @@ int chunkFormat(FastaChunk & fachunk, vector<Sketch::Reference> & refs)
 {
 	uint64 pos = 0;
 	bool done = false;
-	cerr << "into chunkFormat" << endl;
+	//cerr << "into chunkFormat" << endl;
 	while(true){
 	
 		Sketch::Reference ref = getNextSeq(fachunk, done, pos);
