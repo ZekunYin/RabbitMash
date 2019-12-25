@@ -15,6 +15,7 @@
 #include <iostream>
 #include <fcntl.h>
 #include <map>
+#include <algorithm>
 #include "kseq.h"
 #include "MurmurHash3.h"
 #include <assert.h>
@@ -192,6 +193,8 @@ int Sketch::initFromFiles(const vector<string> & files, const Parameters & param
     
 	ThreadPool<Sketch::SketchInput, Sketch::SketchOutput> threadPool(0, parameters.parallelism);
 	
+	bool individual = false;
+
     for ( int i = 0; i < files.size(); i++ )
     {
         bool isSketch = hasSuffix(files[i], parameters.windowed ? suffixSketchWindowed : suffixSketch);
@@ -297,6 +300,7 @@ int Sketch::initFromFiles(const vector<string> & files, const Parameters & param
 			else
 			{
 				//if ( ! sketchFileBySequence(inStream, &threadPool) )
+				individual = true;
 				if ( ! sketchFileByChunk(inStream, &threadPool) )
 				{
 					cerr << "\nERROR: reading " << files[i] << "." << endl;
@@ -306,16 +310,22 @@ int Sketch::initFromFiles(const vector<string> & files, const Parameters & param
 				fclose(inStream);
 			}
 		}
-			
+
 		while ( threadPool.outputAvailable() )
 		{
-			useThreadOutput(threadPool.popOutputWhenAvailable());
-		}
+			if(individual)	
+				useThreadOutputChunk(threadPool.popOutputWhenAvailable());
+			else
+				useThreadOutput(threadPool.popOutputWhenAvailable());
+		}	
     }
     
 	while ( threadPool.running() )
 	{
-		useThreadOutput(threadPool.popOutputWhenAvailable());
+		if(individual)	
+			useThreadOutputChunk(threadPool.popOutputWhenAvailable());
+		else
+			useThreadOutput(threadPool.popOutputWhenAvailable());
 	}
 	
     /*
@@ -490,7 +500,7 @@ bool Sketch::sketchFileByChunk(FILE * file, ThreadPool<Sketch::SketchInput, Sket
 		
 		while ( threadPool->outputAvailable() )
 		{
-			useThreadOutput(threadPool->popOutputWhenAvailable());
+			useThreadOutputChunk(threadPool->popOutputWhenAvailable());
 		}
     	
 	}
@@ -514,6 +524,70 @@ void Sketch::useThreadOutput(SketchOutput * output)
 {
 	references.insert(references.end(), output->references.begin(), output->references.end());
 	positionHashesByReference.insert(positionHashesByReference.end(), output->positionHashesByReference.begin(), output->positionHashesByReference.end());
+	delete output;
+}
+
+void Sketch::useThreadOutputChunk(SketchOutput * output)
+{
+	//cerr << "output size: " << output->references.size() << endl << flush;
+	for(int i = 0; i < output->references.size(); i++)
+	{
+		if(references.empty()){
+			references.push_back(output->references[i]);	
+			continue;
+		}
+
+		if(references.back().gid == output->references[i].gid)
+		{
+			//merge last end and this begin
+			references.back().hashesSorted.merge(output->references[i].hashesSorted);
+			//unique
+			if(parameters.use64)
+			{
+				vector<hash64_t> & this64 = references.back().hashesSorted.hashes64;
+
+				auto last = unique(this64.begin(), this64.end());
+
+				if((last - this64.begin()) > parameters.windowSize)
+				{
+					vector<hash64_t>::iterator it = ( this64.begin() + parameters.windowSize );
+					this64.erase(it, this64.end());	
+				}else{
+					this64.erase(last, this64.end());
+				}
+
+
+			}else{
+				vector<hash32_t> & this32 = references.back().hashesSorted.hashes32;
+
+				auto last = unique(this32.begin(), this32.end());
+
+				if((last - this32.begin()) > parameters.windowSize)
+				{
+					vector<hash32_t>::iterator it = ( this32.begin() + parameters.windowSize );
+					this32.erase(it, this32.end());	
+				}else{
+					this32.erase(last, this32.end());
+				}
+
+			}
+			//resize
+
+			references.back().length += output->references[i].length;
+
+			//TODO:merge counts
+
+
+		}else{
+			references.push_back(output->references[i]);	
+		}
+	}
+
+	//TODO imp for positionHashesByReference
+	for(int i = 0; i < output->positionHashesByReference.size(); i++)
+	{
+	}
+
 	delete output;
 }
 
@@ -1669,30 +1743,39 @@ Sketch::SketchOutput * sketchChunk(Sketch::SketchInput * input)
 	Sketch::SketchOutput * output = new Sketch::SketchOutput();
 	
 	input->fachunk->print();
+
+	/***********Chunk Format**************/
+
+	mash::fa::chunkFormat(*(input->fachunk), output->references);
+
+	for(int i = 0; i < output->references.size(); i++){
+		output->references[i].seq = "";
+		//cout << "name: " << output->references[i].name << endl;
+		//cout << "seq:  " << output->references[i].seq  << endl;
+		cout << "gid:  " << output->references[i].gid  << endl;
+	}	
+	/*************************************/
+
 	input->fastaPool->Release(input->fachunk->chunk);
 
-	//cerr << "after release" << endl << flush;
-	//output->references.resize(1); //not 1 in each chunk
-	//Sketch::Reference & reference = output->references[0];
-	//
-	//reference.length = input->length;
-	//reference.name = input->name;
-	//reference.comment = input->comment;
-	//reference.hashesSorted.setUse64(parameters.use64);
-	//
-	//if ( parameters.windowed )
+	//for(int i = 0; i < output->references.size(); i++)
 	//{
-	//	output->positionHashesByReference.resize(1);
-	//	getMinHashPositions(output->positionHashesByReference[0], input->seq, input->length, parameters, 0);
-	//}
-	//else
-	//{
-	//    MinHashHeap minHashHeap(parameters.use64, parameters.minHashesPerWindow, parameters.reads ? parameters.minCov : 1);
-    //    addMinHashes(minHashHeap, input->seq, input->length, parameters);
-	//	setMinHashesForReference(reference, minHashHeap);
+	//	if ( parameters.windowed )
+	//	{
+	//		//TODO: finish it
+	//		//output->positionHashesByReference.resize(1);
+	//		//getMinHashPositions(output->positionHashesByReference[0], input->seq, input->length, parameters, 0);
+	//	}
+	//	else
+	//	{
+	//	    MinHashHeap minHashHeap(parameters.use64, parameters.minHashesPerWindow, parameters.reads ? parameters.minCov : 1);
+    //	    addMinHashes(minHashHeap, output->references[i]->seq, output->references[i]->length, parameters);
+	//		setMinHashesForReference(output->references[i], minHashHeap);
+	//	}
 	//}
 	
-	//delete input;	
+	//delete input;	//segfault
+
 	return output;
 }
 

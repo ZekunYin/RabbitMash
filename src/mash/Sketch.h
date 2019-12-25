@@ -138,6 +138,7 @@ public:
         
         std::string name;
         std::string comment;
+        std::string seq;
         uint64_t length;
         HashList hashesSorted;
         std::vector<uint32_t> counts;
@@ -224,6 +225,7 @@ public:
 	bool sketchFileBySequence(FILE * file, ThreadPool<Sketch::SketchInput, Sketch::SketchOutput> * threadPool);
 	bool sketchFileByChunk(FILE * file, ThreadPool<Sketch::SketchInput, Sketch::SketchOutput> * threadPool);
 	void useThreadOutput(SketchOutput * output);
+	void useThreadOutputChunk(SketchOutput * output);
     void warnKmerSize(uint64_t lengthMax, const std::string & lengthMaxName, double randomChance, int kMin, int warningCount) const;
     bool writeToFile() const;
     int writeToCapnp(const char * file) const;

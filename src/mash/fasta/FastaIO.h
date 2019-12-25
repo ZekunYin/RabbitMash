@@ -20,6 +20,7 @@
 #include "FastaStream.h"
 #include "FastaChunk.h"
 #include "Sequence.h"
+#include "../Sketch.h"
 
 namespace mash
 {
@@ -58,8 +59,10 @@ private:
 int chunkFormat(FastaDataChunk* &chunk, std::vector<Sequence*>&, bool);
 
 
-string getSequence(FastaDataChunk* &chunk, int &pos);	//addbyxxm
-string getLine(FastaDataChunk* &chunk, int &pos);
+string getSequence(FastaDataChunk* &chunk, uint64 &pos);	//addbyxxm
+string getLine(FastaDataChunk* &chunk, uint64 &pos);
+int chunkFormat(FastaChunk & fachunk, vector<Sketch::Reference> & refs);
+Sketch::Reference getNextSeq(FastaChunk & fachunk, bool & done, uint64 & pos);
 
 } // namespace fa
 

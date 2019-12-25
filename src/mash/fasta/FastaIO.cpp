@@ -40,30 +40,30 @@ FastaChunk* FastaReader::readNextChunk(){
 	}
 }
 
-int chunkFormat(FastaDataChunk* &chunk, std::vector<Sequence*> &data, bool mHasQuality){
-	//format a whole chunk and return number of reads
-	int seq_count = 0;
-	int line_count = 0;
-	int pos_ = 0;
+//int chunkFormat(FastaDataChunk* &chunk, std::vector<Sequence*> &data, bool mHasQuality){
+//	//format a whole chunk and return number of reads
+//	int seq_count = 0;
+//	int line_count = 0;
+//	int pos_ = 0;
+//
+//	while(true){
+//		//TODO rewrite to deal with part sequence
+//		//string name = getLine(chunk, pos_);
+//		//if(name.empty()) break;//dsrc guarantees that read are completed!
+//		//std::cout << name << std::endl;
+//
+//		//string sequence = getSequence(chunk, pos_);
+//		//std::cout << sequence << std::endl;
+//
+//		//data.push_back(new Read(name, sequence));
+//		//seq_count++;
+//
+//	}
+//
+//	return seq_count;
+//}
 
-	while(true){
-		//TODO rewrite to deal with part sequence
-		//string name = getLine(chunk, pos_);
-		//if(name.empty()) break;//dsrc guarantees that read are completed!
-		//std::cout << name << std::endl;
-
-		//string sequence = getSequence(chunk, pos_);
-		//std::cout << sequence << std::endl;
-
-		//data.push_back(new Read(name, sequence));
-		//seq_count++;
-
-	}
-
-	return seq_count;
-}
-
-string getSequence(FastaDataChunk* &chunk, int &pos){	//addbyxxm
+string getSequence(FastaDataChunk * &chunk, uint64 &pos){	//addbyxxm
 	int start_pos = pos;
 	char * data = (char *)chunk->data.Pointer();
 
@@ -78,10 +78,16 @@ string getSequence(FastaDataChunk* &chunk, int &pos){	//addbyxxm
 			pos++;
 		}
 	}
-	return "";
+	if(pos >= chunk->size){
+		cerr << "start pos: " << start_pos << endl;
+		cerr << "pos: " << pos << endl;
+		return string(data+start_pos, pos-start_pos-2); //FIXME  should not be -2
+	}
+	else
+		return "";
 }
 
-string getLine(FastaDataChunk* &chunk, int &pos){
+string getLine(FastaDataChunk * &chunk, uint64 &pos){
 	int start_pos = pos;
 	char* data = (char *)chunk->data.Pointer();
 
@@ -96,6 +102,50 @@ string getLine(FastaDataChunk* &chunk, int &pos){
 		}
 	}
 	return "";
+}
+
+int chunkFormat(FastaChunk & fachunk, vector<Sketch::Reference> & refs)
+{
+	uint64 pos = 0;
+	bool done = false;
+	cerr << "into chunkFormat" << endl;
+	while(true){
+	
+		Sketch::Reference ref = getNextSeq(fachunk, done, pos);
+		if(done) break;
+		refs.push_back(ref);
+	}
+
+	ASSERT(refs.size() == fachunk.nseqs);
+
+	return refs.size();
+	
+}
+
+Sketch::Reference getNextSeq(FastaChunk & fachunk, bool & done, uint64 & pos)
+{
+	Sketch::Reference ref;
+	if(pos >= fachunk.chunk->size){
+		done = true;
+		return ref;
+	}
+
+	char *data = (char *)fachunk.chunk->data.Pointer();	
+	if(data[pos] != '>')
+	{
+		ref.seq = getSequence(fachunk.chunk, pos);	
+		ref.length = ref.seq.size();
+		ref.gid = fachunk.start;
+		fachunk.start++;
+	}else{
+		ref.name = getLine(fachunk.chunk, pos);
+		ref.seq = getSequence(fachunk.chunk, pos);	
+		ref.length = ref.seq.size();
+		ref.gid = fachunk.start;
+		fachunk.start++;
+	}
+
+	return ref;
 }
 
 } // namesapce fa
