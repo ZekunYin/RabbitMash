@@ -1454,25 +1454,25 @@ Sketch::SketchOutput * loadCapnp(Sketch::SketchInput * input)
 
 void reverseComplement(const char * src, char * dest, int length)
 {
-	//char table[4] = {'T','G','A','C'};
+	char table[4] = {'T','G','A','C'};
     for ( int i = 0; i < length; i++ )
     {
         char base = src[i];
         
-        switch ( base )
-        {
-            case 'A': base = 'T'; break;
-            case 'C': base = 'G'; break;
-            case 'G': base = 'C'; break;
-            case 'T': base = 'A'; break;
-            default: break;
-        }
-	//	base >>= 1;
-	//	base &= 0x03;
+        //switch ( base )
+        //{
+        //    case 'A': base = 'T'; break;
+        //    case 'C': base = 'G'; break;
+        //    case 'G': base = 'C'; break;
+        //    case 'T': base = 'A'; break;
+        //    default: break;
+        //}
+		base >>= 1;
+		base &= 0x03;
 
         
-        dest[length - i - 1] = base;
-       // dest[length - i - 1] = table[base];
+        //dest[length - i - 1] = base;
+        dest[length - i - 1] = table[base];
     }
 }
 
