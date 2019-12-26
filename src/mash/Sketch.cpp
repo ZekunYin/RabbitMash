@@ -1807,12 +1807,6 @@ Sketch::SketchOutput * sketchChunk(Sketch::SketchInput * input)
 
 	mash::fa::chunkFormat(*(input->fachunk), output->references);
 
-	for(int i = 0; i < output->references.size(); i++){
-		output->references[i].seq = "";
-		//cout << "name: " << output->references[i].name << endl;
-		//cout << "seq:  " << output->references[i].seq  << endl;
-		//cout << "gid:  " << output->references[i].gid  << endl;
-	}	
 	/*************************************/
 
 	input->fastaPool->Release(input->fachunk->chunk);
@@ -1833,6 +1827,10 @@ Sketch::SketchOutput * sketchChunk(Sketch::SketchInput * input)
 		}
 	}
 	
+	//destry seq	
+	for(int i = 0; i < output->references.size(); i++){
+		output->references[i].seq = "";
+	}	
 	//delete input;	//segfault
 
 	return output;
