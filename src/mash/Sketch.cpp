@@ -548,9 +548,9 @@ void Sketch::useThreadOutputChunk(SketchOutput * output)
 
 				auto last = unique(this64.begin(), this64.end());
 
-				if((last - this64.begin()) > parameters.windowSize)
+				if((last - this64.begin()) > parameters.minHashesPerWindow)
 				{
-					vector<hash64_t>::iterator it = ( this64.begin() + parameters.windowSize );
+					vector<hash64_t>::iterator it = ( this64.begin() + parameters.minHashesPerWindow);
 					this64.erase(it, this64.end());	
 				}else{
 					this64.erase(last, this64.end());
@@ -562,9 +562,9 @@ void Sketch::useThreadOutputChunk(SketchOutput * output)
 
 				auto last = unique(this32.begin(), this32.end());
 
-				if((last - this32.begin()) > parameters.windowSize)
+				if((last - this32.begin()) > parameters.minHashesPerWindow)
 				{
-					vector<hash32_t>::iterator it = ( this32.begin() + parameters.windowSize );
+					vector<hash32_t>::iterator it = ( this32.begin() + parameters.minHashesPerWindow);
 					this32.erase(it, this32.end());	
 				}else{
 					this32.erase(last, this32.end());
