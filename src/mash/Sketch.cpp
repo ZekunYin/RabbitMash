@@ -597,7 +597,21 @@ bool Sketch::writeToFile() const
 }
 
 int Sketch::writeToCapnp(const char * file) const
-{
+{  
+
+	//debug only TODO:remove it
+    //for ( uint64_t i = 0; i < references.size(); i++ )
+	//{
+	//	for(uint64_t j = 0; j < references[i].hashesSorted.size(); j++)
+	//	{
+	//		if(parameters.use64)
+	//			cerr << references[i].hashesSorted.hashes64[j] << " ";
+	//		else
+	//			cerr << references[i].hashesSorted.hashes32[j] << " ";
+	//	}
+	//	cerr << endl;
+	//}
+
     int fd = open(file, O_CREAT | O_WRONLY | O_TRUNC, 0644);
     
     if ( fd < 0 )

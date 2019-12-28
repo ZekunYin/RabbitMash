@@ -63,37 +63,54 @@ FastaChunk* FastaReader::readNextChunk(){
 //	return seq_count;
 //}
 
-string getSequence(FastaDataChunk * &chunk, uint64 &pos){	//addbyxxm
+
+//FIXME:support enter = \n only
+string getSequence(FastaDataChunk * &chunk, uint64 &pos)
+{
 	int start_pos = pos;
 	char * data = (char *)chunk->data.Pointer();
+	//cerr << "start pos: " << pos << endl << flush;
+	//cerr << "chunk size: " << chunk->size << endl << flush;
+	//cerr << "data[pos]: " << (int)data[pos] << endl << flush;
+	string res="";
 
-	while(pos <= (chunk->size + 1))
+	while(pos < chunk->size - 1 )
 	{
-		if(data[pos] == '\n' || data[pos] == '\r' || pos == (chunk->size + 1)){//the pos == chunk->size + 1 cannot be true when the final char is '\n'
+		if(data[pos] == '\n'){
+			res += string(data+start_pos, pos-start_pos);
 			pos++;
-			if(data[pos] == '>' || pos == chunk->size + 1)//so this is the pos == chunk->size + 1;
-				return string(data+start_pos, pos-start_pos-1);
+			start_pos = pos;
+			if(data[pos] == '>')
+				return res;		
 		}
 		else{
 			pos++;
 		}
 	}
-	if(pos >= chunk->size){
-		//cerr << "start pos: " << start_pos << endl;
-		//cerr << "pos: " << pos << endl;
-		return string(data+start_pos, pos-start_pos-2); //FIXME  should not be -2
-	}
-	else
-		return "";
+
+	//deal with last char	
+	if(pos == chunk->size - 1)
+	{
+		if(data[pos] == '\n')
+			res += string(data+start_pos, pos - start_pos);
+		else
+			res += string(data+start_pos, pos - start_pos + 1);
+
+		return res;
+	}	
+
+		
+	return "";
 }
 
-string getLine(FastaDataChunk * &chunk, uint64 &pos){
+//only support uinx-like '\n'
+string getLine(FastaDataChunk * &chunk, uint64 &pos)
+{
 	int start_pos = pos;
 	char* data = (char *)chunk->data.Pointer();
 
-	while(pos <= (chunk->size + 1)){
-		if(data[pos] == '\n' || data[pos] == '\r' || pos == (chunk->size + 1)){
-			//find a line
+	while(pos < chunk->size){
+		if(data[pos] == '\n'){
 			pos++;
 			return string(data+start_pos, pos-start_pos - 1);
 		}
@@ -101,6 +118,7 @@ string getLine(FastaDataChunk * &chunk, uint64 &pos){
 			pos++;
 		}
 	}
+
 	return "";
 }
 
@@ -125,12 +143,15 @@ int chunkFormat(FastaChunk & fachunk, vector<Sketch::Reference> & refs)
 Sketch::Reference getNextSeq(FastaChunk & fachunk, bool & done, uint64 & pos)
 {
 	Sketch::Reference ref;
-	if(pos >= fachunk.chunk->size){
+	if(pos >= fachunk.chunk->size - 1){
 		done = true;
 		return ref;
 	}
 
 	char *data = (char *)fachunk.chunk->data.Pointer();	
+
+	//while(data[pos] == '\n') pos++;//jump empty lines
+
 	if(data[pos] != '>')
 	{
 		ref.seq = getSequence(fachunk.chunk, pos);	
@@ -139,7 +160,9 @@ Sketch::Reference getNextSeq(FastaChunk & fachunk, bool & done, uint64 & pos)
 		fachunk.start++;
 	}else{
 		ref.name = getLine(fachunk.chunk, pos);
+		//cerr << "name: " << ref.name << endl << flush;
 		ref.seq = getSequence(fachunk.chunk, pos);	
+		//cerr << "seq: " << ref.seq << endl << flush;
 		ref.length = ref.seq.size();
 		ref.gid = fachunk.start;
 		fachunk.start++;
