@@ -571,9 +571,9 @@ void Sketch::useThreadOutputChunk(SketchOutput * output)
 				}
 
 			}
-			//resize
 
-			references.back().length += output->references[i].length;
+			//resize remove halo region
+			references.back().length += output->references[i].length - parameters.kmerSize;
 
 			//TODO:merge counts
 
