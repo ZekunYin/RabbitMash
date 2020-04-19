@@ -6,5 +6,5 @@ which is available in and GCC >= 5 and XCode >= 6.
 See http://mash.readthedocs.org for more information.
 
 # TODO
-- [ ] fix missing hash value
+- [x] fix missing hash value
 - [ ] add bad check
