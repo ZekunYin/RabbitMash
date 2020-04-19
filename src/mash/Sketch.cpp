@@ -469,7 +469,7 @@ bool Sketch::sketchFileByChunk(FILE * file, ThreadPool<Sketch::SketchInput, Sket
 	//kseq_t *seq = kseq_init(fp);
 	
 	mash::fa::FastaDataPool *fastaPool    = new mash::fa::FastaDataPool(32, 1<<26);
-	mash::fa::FastaFileReader *fileReader = new mash::fa::FastaFileReader(fileno(file));
+	mash::fa::FastaFileReader *fileReader = new mash::fa::FastaFileReader(fileno(file), parameters.kmerSize - 1);
 	mash::fa::FastaReader *fastaReader    = new mash::fa::FastaReader(*fileReader, *fastaPool);
     int l;
     int count = 0;
@@ -573,7 +573,8 @@ void Sketch::useThreadOutputChunk(SketchOutput * output)
 			}
 
 			//resize remove halo region
-			references.back().length += output->references[i].length - parameters.kmerSize;
+			//halo region is kmerSize - 1
+			references.back().length += output->references[i].length - parameters.kmerSize + 1;
 
 			//TODO:merge counts
 
@@ -1835,6 +1836,8 @@ Sketch::SketchOutput * sketchChunk(Sketch::SketchInput * input)
 		}
 		else
 		{
+			//debug only
+			//std::cout << output->references[i].seq << std::endl;
 		    MinHashHeap minHashHeap(parameters.use64, parameters.minHashesPerWindow, parameters.reads ? parameters.minCov : 1);
     	    addMinHashes(minHashHeap, output->references[i].seq.c_str(), output->references[i].length, parameters);
 			setMinHashesForReference(output->references[i], minHashHeap);

@@ -112,7 +112,7 @@ public:
 
 	~FastaFileReader()
 	{
-		std::cout << "totalSeqs: " << this->totalSeqs << std::endl;
+		std::cerr << "totalSeqs: " << this->totalSeqs << std::endl;
 		if(mFile != NULL)
 			Close();
 		delete mFile;

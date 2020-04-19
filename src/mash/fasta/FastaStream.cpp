@@ -78,8 +78,27 @@ bool FastaFileReader::ReadNextChunk(FastaChunk* dataChunk_, SeqInfos& seqInfos)
 			//copy tail to swapBuffer
 			//if(data[chunkEnd] == '\n') chunkEnd++;
 			//TODO: dealing with halo region
-			std::copy(data + chunkEnd - mHalo, data + cbufSize, swapBuffer.Pointer());
-			bufferSize = cbufSize - chunkEnd + mHalo;
+			//get rid of '\n' in halo region FIXME: Crlf not supported
+			int haloCount = 0;
+			uint64 tmpPtr = chunkEnd - 1;
+			if(mHalo > 0){
+				while(true){
+					if(data[tmpPtr] != '\n')
+					{
+						haloCount++;
+						//std::cerr << (char)data[tmpPtr] << std::endl;
+						if(haloCount == mHalo) break;
+					}
+					tmpPtr--;
+				}
+				//std::cerr << "haloCount: " << haloCount << std::endl;
+			}else{
+				tmpPtr = chunkEnd; //nocopy	
+			}
+			//std::copy(data + chunkEnd - mHalo, data + cbufSize, swapBuffer.Pointer());
+			std::copy(data + tmpPtr, data + cbufSize, swapBuffer.Pointer());
+			//bufferSize = cbufSize - chunkEnd + mHalo;
+			bufferSize = cbufSize - tmpPtr;
 
 		}
 		else				// at the end of file
@@ -133,7 +152,7 @@ uint64 FastaFileReader::FindCutPos(FastaChunk* dataChunk_, uchar* data_, const u
 					this->totalSeqs++;
 				}else{
 					cut_ = pos_; //find a cut: incomplete name
-					std::cout << "cut char: " << (char)data_[cut_] << std::endl;
+					std::cerr << "cut char: " << (char)data_[cut_] << std::endl;
 					break;
 				}
 			}else{
