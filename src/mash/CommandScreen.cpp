@@ -29,8 +29,8 @@ using std::cout;
 using std::endl;
 using std::list;
 using std::string;
-using std::unordered_map;
-using std::unordered_set;
+using robin_hood::unordered_map;
+using robin_hood::unordered_set;
 using std::vector;
 
 namespace mash {
@@ -288,8 +288,9 @@ int CommandScreen::run() const
 	}
 	
 	MinHashHeap minHashHeap(sketch.getUse64(), sketch.getMinHashesPerWindow());
-	
-	for ( unordered_set<MinHashHeap *>::const_iterator i = minHashHeaps.begin(); i != minHashHeaps.end(); i++ )
+
+	//i++ to ++i see https://github.com/martinus/robin-hood-hashing/issues/15
+	for ( unordered_set<MinHashHeap *>::const_iterator i = minHashHeaps.begin(); i != minHashHeaps.end(); ++i )
 	{
 		HashList hashList(parameters.use64);
 		
@@ -337,13 +338,13 @@ int CommandScreen::run() const
 	
 	memset(shared, 0, sizeof(uint64_t) * sketch.getReferenceCount());
 	
-	for ( unordered_map<uint64_t, std::atomic<uint32_t> >::const_iterator i = hashCounts.begin(); i != hashCounts.end(); i++ )
+	for ( unordered_map<uint64_t, std::atomic<uint32_t> >::const_iterator i = hashCounts.begin(); i != hashCounts.end(); ++i )
 	{
 		if ( i->second >= minCov )
 		{
 			const unordered_set<uint64_t> & indeces = hashTable.at(i->first);
 
-			for ( unordered_set<uint64_t>::const_iterator k = indeces.begin(); k != indeces.end(); k++ )
+			for ( unordered_set<uint64_t>::const_iterator k = indeces.begin(); k != indeces.end(); ++k )
 			{
 				shared[*k]++;
 				depths[*k].push_back(i->second);
@@ -374,7 +375,7 @@ int CommandScreen::run() const
 			depths[i].clear();
 		}
 		
-		for ( HashTable::const_iterator i = hashTable.begin(); i != hashTable.end(); i++ )
+		for ( HashTable::const_iterator i = hashTable.begin(); i != hashTable.end(); ++i )
 		{
 			if ( hashCounts.count(i->first) == 0 || hashCounts.at(i->first) < minCov )
 			{
@@ -386,7 +387,7 @@ int CommandScreen::run() const
 			uint64_t maxLength = 0;
 			uint64_t maxIndex;
 			
-			for ( unordered_set<uint64_t>::const_iterator k = indeces.begin(); k != indeces.end(); k++ )
+			for ( unordered_set<uint64_t>::const_iterator k = indeces.begin(); k != indeces.end(); ++k )
 			{
 				if ( scores[*k] > maxScore )
 				{
