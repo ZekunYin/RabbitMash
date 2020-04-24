@@ -225,6 +225,7 @@ public:
 	bool sketchFileBySequence(FILE * file, ThreadPool<Sketch::SketchInput, Sketch::SketchOutput> * threadPool);
 	bool sketchFileByChunk(FILE * file, ThreadPool<Sketch::SketchInput, Sketch::SketchOutput> * threadPool);
 	void useThreadOutput(SketchOutput * output);
+	void useThreadOutput_FreeMemory(SketchOutput * output);
 	void useThreadOutputChunk(SketchOutput * output);
     void warnKmerSize(uint64_t lengthMax, const std::string & lengthMaxName, double randomChance, int kMin, int warningCount) const;
     bool writeToFile() const;

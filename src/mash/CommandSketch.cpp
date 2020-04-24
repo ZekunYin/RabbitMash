@@ -8,6 +8,7 @@
 #include "Sketch.h"
 #include "sketchParameterSetup.h"
 #include <iostream>
+#include <sys/time.h>
 
 using std::cerr;
 using std::endl;
@@ -15,6 +16,11 @@ using std::string;
 using std::vector;
 
 namespace mash {
+double get_sec(){
+	struct timeval tv;
+	gettimeofday(&tv, NULL);
+	return (double)tv.tv_sec + (double)tv.tv_usec/1000000;
+}
 
 CommandSketch::CommandSketch()
 : Command()
@@ -173,8 +179,10 @@ int CommandSketch::run() const
     }
     
     cerr << "Writing to " << prefix << "..." << endl;
-    
+   	double t1 = get_sec(); 
     sketch.writeToCapnp(prefix.c_str());
+   	double t2 = get_sec(); 
+	cerr << "the time of writeToCapnp is: " << t2 - t1 << endl;
     
     if ( warningCount > 0 && ! parameters.reads )
     {

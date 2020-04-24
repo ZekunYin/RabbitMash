@@ -37,9 +37,12 @@
 
 #define SET_BINARY_MODE(file)
 #define CHUNK 16384
+#define MEMORYBOUND 10000
 KSEQ_INIT(gzFile, gzread)
 
 using namespace std;
+
+int bGlobalIndex = 0;
 
 typedef map < Sketch::hash_t, vector<Sketch::PositionHash> > LociByHash_map;
 
@@ -449,7 +452,7 @@ bool Sketch::sketchFileBySequence(FILE * file, ThreadPool<Sketch::SketchInput, S
 		
 		while ( threadPool->outputAvailable() )
 		{
-			useThreadOutput(threadPool->popOutputWhenAvailable());
+			useThreadOutput_FreeMemory(threadPool->popOutputWhenAvailable());
 		}
     	
 		count++;
@@ -520,6 +523,28 @@ bool Sketch::sketchFileByChunk(FILE * file, ThreadPool<Sketch::SketchInput, Sket
 	return true;
 }
 
+void Sketch::useThreadOutput_FreeMemory(SketchOutput * output)
+{
+	references.insert(references.end(), output->references.begin(), output->references.end());
+	//cerr << "the size of references  of useThereadOutput is: " << references.size() << endl;	
+	positionHashesByReference.insert(positionHashesByReference.end(), output->positionHashesByReference.begin(), output->positionHashesByReference.end());
+
+	if(references.size() >= MEMORYBOUND + 1){
+		references.erase(references.begin(), references.begin()+MEMORYBOUND);
+	}
+
+	
+	if(references.size() >= MEMORYBOUND){
+		cerr << "the reference.size() is: " << references.size() << endl;
+		string fixName = to_string(bGlobalIndex) + "world.msh";
+		this->writeToCapnp(fixName.c_str());
+		bGlobalIndex++;
+		//sleep(2);
+	//	references.erase(references.begin(), references.begin()+438);
+	}
+	delete output;
+}
+
 void Sketch::useThreadOutput(SketchOutput * output)
 {
 	references.insert(references.end(), output->references.begin(), output->references.end());
@@ -582,6 +607,20 @@ void Sketch::useThreadOutputChunk(SketchOutput * output)
 		}else{
 			references.push_back(output->references[i]);	
 		}
+
+	if(references.size() >= MEMORYBOUND + 1){
+		references.erase(references.begin(), references.begin()+MEMORYBOUND);
+	}
+
+	
+	if(references.size() >= MEMORYBOUND){
+		cerr << "the reference.size() is: " << references.size() << endl;
+		string fixName = to_string(bGlobalIndex) + "world.msh";
+		this->writeToCapnp(fixName.c_str());
+		bGlobalIndex++;
+		//sleep(2);
+	//	references.erase(references.begin(), references.begin()+438);
+	}
 	}
 
 	//TODO imp for positionHashesByReference
