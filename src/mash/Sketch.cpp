@@ -452,7 +452,12 @@ bool Sketch::sketchFileBySequence(FILE * file, ThreadPool<Sketch::SketchInput, S
 		
 		while ( threadPool->outputAvailable() )
 		{
-			useThreadOutput_FreeMemory(threadPool->popOutputWhenAvailable());
+			if(parameters.freeMemory){
+				useThreadOutput_FreeMemory(threadPool->popOutputWhenAvailable());
+			}
+			else{
+				useThreadOutput(threadPool->popOutputWhenAvailable());
+			}
 		}
     	
 		count++;
@@ -607,20 +612,22 @@ void Sketch::useThreadOutputChunk(SketchOutput * output)
 		}else{
 			references.push_back(output->references[i]);	
 		}
-
-	if(references.size() >= MEMORYBOUND + 1){
-		references.erase(references.begin(), references.begin()+MEMORYBOUND);
-	}
-
-	
-	if(references.size() >= MEMORYBOUND){
-		cerr << "the reference.size() is: " << references.size() << endl;
-		string fixName = to_string(bGlobalIndex) + "world.msh";
-		this->writeToCapnp(fixName.c_str());
-		bGlobalIndex++;
-		//sleep(2);
-	//	references.erase(references.begin(), references.begin()+438);
-	}
+		
+		if(parameters.freeMemory){
+			if(references.size() >= MEMORYBOUND + 1){
+				references.erase(references.begin(), references.begin()+MEMORYBOUND);
+			}
+		
+			
+			if(references.size() >= MEMORYBOUND){
+				cerr << "the reference.size() is: " << references.size() << endl;
+				string fixName = to_string(bGlobalIndex) + "world.msh";
+				this->writeToCapnp(fixName.c_str());
+				bGlobalIndex++;
+				//sleep(2);
+			//	references.erase(references.begin(), references.begin()+438);
+			}
+		}
 	}
 
 	//TODO imp for positionHashesByReference

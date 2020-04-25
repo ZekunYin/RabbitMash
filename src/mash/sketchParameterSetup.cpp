@@ -22,6 +22,9 @@ int sketchParameterSetup(Sketch::Parameters & parameters, const Command & comman
     parameters.reads = command.getOption("reads").active;
     parameters.minCov = command.getOption("minCov").getArgumentAsNumber();
     parameters.targetCov = command.getOption("targetCov").getArgumentAsNumber();
+	if(command.getOption("freeMemory").active){
+		parameters.freeMemory = true;
+	}
 #ifdef COMMAND_FIND
     parameters.windowed = command.getOption("windowed").active;
     parameters.windowSize = command.getOption("window").getArgumentAsNumber();

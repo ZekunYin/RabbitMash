@@ -58,7 +58,8 @@ public:
             memoryBound(0),
             minCov(1),
             targetCov(0),
-            genomeSize(0)
+            genomeSize(0),
+			freeMemory(false)
         {
         	memset(alphabet, 0, 256);
         }
@@ -82,7 +83,8 @@ public:
             memoryBound(other.memoryBound),
             minCov(other.minCov),
             targetCov(other.targetCov),
-            genomeSize(other.genomeSize)
+            genomeSize(other.genomeSize),
+			freeMemory(other.freeMemory)
 		{
 			memcpy(alphabet, other.alphabet, 256);
 		}
@@ -106,6 +108,7 @@ public:
         uint32_t minCov;
         double targetCov;
         uint64_t genomeSize;
+		bool freeMemory;
     };
     
     struct PositionHash
