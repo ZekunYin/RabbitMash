@@ -1906,7 +1906,7 @@ Sketch::SketchOutput * sketchChunk(Sketch::SketchInput * input)
 
 	/***********Chunk Format**************/
 
-	mash::fa::chunkFormat(*(input->fachunk), output->references);
+	mash::fa::chunkFormat(*(input->fachunk), output->references, parameters.kmerSize);
 
 	/*************************************/
 
@@ -1925,7 +1925,59 @@ Sketch::SketchOutput * sketchChunk(Sketch::SketchInput * input)
 			//debug only
 			//std::cout << output->references[i].seq << std::endl;
 		    MinHashHeap minHashHeap(parameters.use64, parameters.minHashesPerWindow, parameters.reads ? parameters.minCov : 1);
-    	    addMinHashes(minHashHeap, output->references[i].seq.c_str(), output->references[i].length, parameters);
+
+			string & seq = output->references[i].seq;
+
+			//dealing with letter's case	
+			for ( uint64_t k = 0; k < seq.length(); k++ )
+    		{
+    		    if ( ! parameters.preserveCase && seq[k] > 96 && seq[k] < 123 )
+    		    {
+    		        seq[k] -= 32;
+    		    }
+    		}
+
+			//FIXME: make it more clear
+			//cerr <<"seq: " << seq << endl;
+			//cerr << "seq_len: " << seq.length() << endl;
+			int j = 0;
+			int start = 0;
+			while(j < seq.length()){
+				if( parameters.alphabet[seq[j]] )
+				{
+					j++;
+					if(j == seq.length() && j - start >= parameters.kmerSize){
+						string subSeq = seq.substr(start, j - start);	
+						//cerr << "substr: " << subSeq << endl;
+						//cerr << "j: " << j << endl;
+						//cerr << "start: " << start << endl;
+    	    			addMinHashes(minHashHeap, subSeq.c_str(), subSeq.length(), parameters);
+					}
+					continue;
+				}else{
+
+					if(j - start >= parameters.kmerSize)
+					{
+						//get substr without bad char
+						string subSeq = seq.substr(start, j - start);	
+						//cerr << "substr: " << subSeq << endl;
+						//cerr << "j: " << j << endl;
+						//cerr << "start: " << start << endl;
+    	    			addMinHashes(minHashHeap, subSeq.c_str(), subSeq.length(), parameters);
+						j++;
+						while(j < seq.length() && !parameters.alphabet[seq[j]]) j++;
+						if(j >= seq.length()) break;
+						start = j;
+					}else{
+						j++;	
+						while(j < seq.length() && !parameters.alphabet[seq[j]]) j++;
+						if(j >= seq.length()) break;
+						start = j;
+					}
+				}
+			}
+
+    	    //addMinHashes(minHashHeap, output->references[i].seq.c_str(), output->references[i].length, parameters);
 			setMinHashesForReference(output->references[i], minHashHeap);
 		}
 	}

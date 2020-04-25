@@ -140,6 +140,29 @@ int chunkFormat(FastaChunk & fachunk, vector<Sketch::Reference> & refs)
 	
 }
 
+//design to filter out kmer apps
+int chunkFormat(FastaChunk & fachunk, vector<Sketch::Reference> & refs, int kmerSize)
+{
+	uint64 pos = 0;
+	bool done = false;
+	//cerr << "into chunkFormat" << endl;
+	uint64 short_count = 0; //counter for seqs shorter than kmer
+	while(true){
+	
+		Sketch::Reference ref = getNextSeq(fachunk, done, pos);
+		if(done) break;
+		if(ref.seq.length() < kmerSize)
+			short_count++;
+		else
+			refs.push_back(ref);
+	}
+
+	ASSERT(refs.size() + short_count == fachunk.nseqs);
+
+	return refs.size();
+	
+}
+
 Sketch::Reference getNextSeq(FastaChunk & fachunk, bool & done, uint64 & pos)
 {
 	Sketch::Reference ref;

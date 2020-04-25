@@ -62,6 +62,7 @@ int chunkFormat(FastaDataChunk* &chunk, std::vector<Sequence*>&, bool);
 string getSequence(FastaDataChunk* &chunk, uint64 &pos);	//addbyxxm
 string getLine(FastaDataChunk* &chunk, uint64 &pos);
 int chunkFormat(FastaChunk & fachunk, vector<Sketch::Reference> & refs);
+int chunkFormat(FastaChunk & fachunk, vector<Sketch::Reference> & refs, int kmerSize);
 Sketch::Reference getNextSeq(FastaChunk & fachunk, bool & done, uint64 & pos);
 
 } // namespace fa
