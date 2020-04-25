@@ -10,9 +10,10 @@
 #include "kseq.h"
 #include <iostream>
 #include <set>
-#include <unordered_set>
+//#include <unordered_set>
 #include "ThreadPool.h"
 #include "sketchParameterSetup.h"
+#include "robin_hood.h"
 
 using std::cerr;
 using std::cout;
@@ -229,7 +230,7 @@ CommandFind::FindOutput * find(CommandFind::FindInput * data)
 
 void findPerStrand(const CommandFind::FindInput * input, CommandFind::FindOutput * output, bool minusStrand)
 {
-    typedef std::unordered_map < uint32_t, std::set<uint32_t> > PositionsBySequence_umap;
+    typedef robin_hood::unordered_map < uint32_t, std::set<uint32_t> > PositionsBySequence_umap;
     
     bool verbose = false;
     
@@ -304,7 +305,7 @@ void findPerStrand(const CommandFind::FindInput * input, CommandFind::FindOutput
     //
     PositionsBySequence_umap hits;
     //
-    for ( Sketch::Hash_set::const_iterator i = minHashes.begin(); i != minHashes.end(); i++ )
+    for ( Sketch::Hash_set::const_iterator i = minHashes.begin(); i != minHashes.end(); ++i )
     {
         Sketch::hash_t hash = *i;
         
@@ -326,7 +327,7 @@ void findPerStrand(const CommandFind::FindInput * input, CommandFind::FindOutput
         }
     }
     
-    for ( PositionsBySequence_umap::iterator i = hits.begin(); i != hits.end(); i++ )
+    for ( PositionsBySequence_umap::iterator i = hits.begin(); i != hits.end(); ++i )
     {
     	using std::set;
     	

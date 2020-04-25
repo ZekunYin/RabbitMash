@@ -8,8 +8,9 @@
 #define HashSet_h
 
 #include "HashList.h"
-#include <unordered_map>
+//#include <unordered_map>
 #include <vector>
+#include "robin_hood.h"
 
 class HashSet
 {
@@ -28,8 +29,8 @@ public:
 private:
     
     bool use64;
-    std::unordered_map<hash32_t, uint32_t> hashes32;
-    std::unordered_map<hash64_t, uint32_t> hashes64;
+    robin_hood::unordered_map<hash32_t, uint32_t> hashes32;
+    robin_hood::unordered_map<hash64_t, uint32_t> hashes64;
 };
 
 #endif
