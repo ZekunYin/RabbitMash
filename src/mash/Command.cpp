@@ -189,7 +189,8 @@ Command::Command()
     addAvailableOption("illumina", Option(Option::Boolean, "illumina", "", "Use default settings for Illumina sequences.", ""));
     addAvailableOption("nanopore", Option(Option::Boolean, "nanopore", "", "Use default settings for Oxford Nanopore sequences.", ""));
     addAvailableOption("factor", Option(Option::Number, "f", "Window", "Compression factor", "100"));
-    
+	addAvailableOption("freeMemory", Option(Option::Boolean, "fw", "Output", "free the memory by writeToCpanp to several subfiles intermediately.", ""));
+
     addCategory("", "");
     addCategory("Input", "Input");
     addCategory("Output", "Output");
@@ -373,6 +374,7 @@ void Command::useSketchOptions()
     useOption("minCov");
     useOption("targetCov");
     useOption("genome");
+	useOption("freeMemory");
     //useOption("illumina");
     //useOption("pacbio");
     //useOption("nanopore");
