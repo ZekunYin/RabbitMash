@@ -7,4 +7,5 @@ See http://mash.readthedocs.org for more information.
 
 # TODO
 - [x] fix missing hash value
-- [ ] add bad check
+- [x] add bad check
+- [ ] optimize screen operation
