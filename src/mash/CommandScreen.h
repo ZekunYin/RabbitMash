@@ -7,6 +7,8 @@
 #ifndef INCLUDED_CommandScreen
 #define INCLUDED_CommandScreen
 
+#include "fasta/FastaChunk.h"
+
 #include "Command.h"
 #include "Sketch.h"
 #include <list>
@@ -115,6 +117,16 @@ public:
     	trans(transNew)
     	{}
     	
+    	HashInput(mash::fa::FastaChunk *fachunkNew, mash::fa::FastaDataPool * fastaPoolNew, robin_hood::unordered_map<uint64_t, std::atomic<uint32_t> > & hashCountsNew, MinHashHeap * minHashHeapNew, const Sketch::Parameters & parametersNew, bool transNew)
+		:
+		fachunk(fachunkNew),
+		fastaPool(fastaPoolNew),
+    	hashCounts(hashCountsNew),
+    	minHashHeap(minHashHeapNew),
+    	parameters(parametersNew),
+    	trans(transNew)
+		{}
+
     	~HashInput()
     	{
     		if ( seq != 0 )
@@ -125,13 +137,18 @@ public:
     	
     	std::string fileName;
     	
-    	char * seq;
+    	char * seq = 0;
     	uint64_t length;
     	bool trans;
     	
     	Sketch::Parameters parameters;
 		robin_hood::unordered_map<uint64_t, std::atomic<uint32_t> > & hashCounts;
 		MinHashHeap * minHashHeap;
+
+		//for FAST fasta IO
+		mash::fa::FastaChunk *fachunk;
+		mash::fa::FastaDataPool *fastaPool;
+
     };
     
     struct HashOutput
@@ -164,6 +181,7 @@ private:
 char aaFromCodon(const char * codon);
 double estimateIdentity(uint64_t common, uint64_t denom, int kmerSize, double kmerSpace);
 CommandScreen::HashOutput * hashSequence(CommandScreen::HashInput * input);
+CommandScreen::HashOutput * hashSequenceChunk(CommandScreen::HashInput * input);
 double pValueWithin(uint64_t x, uint64_t setSize, double kmerSpace, uint64_t sketchSize);
 void translate(const char * src, char * dst, uint64_t len);
 void useThreadOutput(CommandScreen::HashOutput * output, robin_hood::unordered_set<MinHashHeap *> & minHashHeaps);

@@ -4,6 +4,11 @@
 //
 // See the LICENSE.txt file included with this software for license information.
 
+//Fast fasta file IO 
+#include "fasta/FastaIO.h"
+#include "fasta/FastaStream.h"
+#include "fasta/FastaChunk.h"
+
 #include "CommandScreen.h"
 #include "CommandDistance.h" // for pvalue
 #include "Sketch.h"
@@ -153,140 +158,186 @@ int CommandScreen::run() const
 	int kmerSize = parameters.kmerSize;
 	int minCov = 1;//options.at("minCov").getArgumentAsNumber();
 	
-	ThreadPool<CommandScreen::HashInput, CommandScreen::HashOutput> threadPool(hashSequence, parameters.parallelism);
+	ThreadPool<CommandScreen::HashInput, CommandScreen::HashOutput> threadPool(hashSequenceChunk, parameters.parallelism);
 	
-	// open all query files for round robin
-	//
-	gzFile fps[queryCount];
-	list<kseq_t *> kseqs;
-	//
-	for ( int f = 1; f < arguments.size(); f++ )
-	{
-		if ( arguments[f] == "-" )
-		{
-			if ( f > 1 )
-			{
-				cerr << "ERROR: '-' for stdin must be first query" << endl;
-				exit(1);
-			}
-			
-			fps[f - 1] = gzdopen(fileno(stdin), "r");
-		}
-		else
-		{
-			fps[f - 1] = gzopen(arguments[f].c_str(), "r");
-			
-			if ( fps[f - 1] == 0 )
-			{
-				cerr << "ERROR: could not open " << arguments[f] << endl;
-				exit(1);
-			}
-		}
-		
-		kseqs.push_back(kseq_init(fps[f - 1]));
-	}
+	// open all query files for FAST fasta IO 
+	mash::fa::FastaDataPool *fastaPool    = new mash::fa::FastaDataPool(32, 1<<20);
+
+	std::vector<FILE *> inStreams;
+	for(int i = 1; i <= queryCount; i++)
+		inStreams.push_back( fopen(arguments[i].c_str(), "r"));
+
+	//// open all query files for round robin
+	////
+	//gzFile fps[queryCount];
+	//list<kseq_t *> kseqs;
+	////
+	//for ( int f = 1; f < arguments.size(); f++ )
+	//{
+	//	if ( arguments[f] == "-" )
+	//	{
+	//		if ( f > 1 )
+	//		{
+	//			cerr << "ERROR: '-' for stdin must be first query" << endl;
+	//			exit(1);
+	//		}
+	//		
+	//		fps[f - 1] = gzdopen(fileno(stdin), "r");
+	//	}
+	//	else
+	//	{
+	//		fps[f - 1] = gzopen(arguments[f].c_str(), "r");
+	//		
+	//		if ( fps[f - 1] == 0 )
+	//		{
+	//			cerr << "ERROR: could not open " << arguments[f] << endl;
+	//			exit(1);
+	//		}
+	//	}
+	//	
+	//	kseqs.push_back(kseq_init(fps[f - 1]));
+	//}
 	
-	// perform round-robin, closing files as they end
+	// perform round-robin, closing files as they end <<----no round robin---->>
 	//
-	int l;
-	uint64_t count = 0;
+	//int l;
+	//uint64_t count = 0;
 	//uint64_t kmersTotal = 0;
-	uint64_t chunkSize = 1 << 20;
-	string input;
-	input.reserve(chunkSize);
-	list<kseq_t *>::iterator it = kseqs.begin();
+	//uint64_t chunkSize = 1 << 20;
+	//string input;
+	//input.reserve(chunkSize);
+	//list<kseq_t *>::iterator it = kseqs.begin();
 	//
-	while ( true )
+	//while ( true )
+	//{
+	//	if ( kseqs.begin() == kseqs.end() )
+	//	{
+	//		l = 0;
+	//	}
+	//	else
+	//	{
+	//		l = kseq_read(*it);
+	//	
+	//		if ( l < -1 ) // error
+	//		{
+	//			break;
+	//		}
+	//	
+	//		if ( l == -1 ) // eof
+	//		{
+	//			kseq_destroy(*it);
+	//			it = kseqs.erase(it);
+	//			if ( it == kseqs.end() )
+	//			{
+	//				//it = kseqs.begin();
+	//				break; //no file
+	//			}
+	//			//continue;
+	//		}
+	//	}
+	//	
+	//	if ( input.length() + (l >= kmerSize ? l + 1 : 0) > chunkSize || kseqs.begin() == kseqs.end() )
+	//	{
+	//		// chunk big enough or at the end; time to flush
+	//		
+	//		// buffer this out since kseq will overwrite (deleted by HashInput destructor)
+	//		//
+	//		char * seqCopy = new char[input.length()];
+	//		//
+	//		memcpy(seqCopy, input.c_str(), input.length());
+	//		
+	//		if ( minHashHeaps.begin() == minHashHeaps.end() )
+	//		{
+	//			minHashHeaps.emplace(new MinHashHeap(sketch.getUse64(), sketch.getMinHashesPerWindow()));
+	//		}
+	//		
+	//		threadPool.runWhenThreadAvailable(new HashInput(hashCounts, *minHashHeaps.begin(), seqCopy, input.length(), parameters, trans));
+	//	
+	//		input = "";
+	//	
+	//		minHashHeaps.erase(minHashHeaps.begin());
+	//	
+	//		while ( threadPool.outputAvailable() )
+	//		{
+	//			useThreadOutput(threadPool.popOutputWhenAvailable(), minHashHeaps);
+	//		}
+	//	}
+	//	
+	//	if ( kseqs.begin() == kseqs.end() )
+	//	{
+	//		break;
+	//	}
+	//	
+	//	count++;
+	//	
+	//	if ( l >= kmerSize )
+	//	{
+	//		input.append(1, '*');
+	//		input.append((*it)->seq.s, l);
+	//	}
+	//	
+	//	//it++;
+	//	//
+	//	//if ( it == kseqs.end() )
+	//	//{
+	//	//	it = kseqs.begin();
+	//	//}
+	//}
+	//
+	//if (  l != -1 )
+	//{
+	//	cerr << "\nERROR: reading inputs" << endl;
+	//	exit(1);
+	//}
+
+	for(int i = 0; i < inStreams.size(); i++)
 	{
-		if ( kseqs.begin() == kseqs.end() )
+		mash::fa::FastaFileReader *fileReader = new mash::fa::FastaFileReader(fileno(inStreams[i]), parameters.kmerSize - 1);
+		mash::fa::FastaReader *fastaReader    = new mash::fa::FastaReader(*fileReader, *fastaPool);
+
+		int nChunks = 0;
+		while(true)
 		{
-			l = 0;
-		}
-		else
-		{
-			l = kseq_read(*it);
-		
-			if ( l < -1 ) // error
-			{
-				break;
-			}
-		
-			if ( l == -1 ) // eof
-			{
-				kseq_destroy(*it);
-				it = kseqs.erase(it);
-				if ( it == kseqs.end() )
-				{
-					//it = kseqs.begin();
-					break; //no file
-				}
-				//continue;
-			}
-		}
-		
-		if ( input.length() + (l >= kmerSize ? l + 1 : 0) > chunkSize || kseqs.begin() == kseqs.end() )
-		{
-			// chunk big enough or at the end; time to flush
+
+			mash::fa::FastaChunk *fachunk = fastaReader->readNextChunk();
+			if(fachunk == NULL) break;
+			nChunks++;	
 			
-			// buffer this out since kseq will overwrite (deleted by HashInput destructor)
-			//
-			char * seqCopy = new char[input.length()];
-			//
-			memcpy(seqCopy, input.c_str(), input.length());
-			
+			//cerr << "nChunks: " << nChunks << endl << std::flush;
 			if ( minHashHeaps.begin() == minHashHeaps.end() )
 			{
 				minHashHeaps.emplace(new MinHashHeap(sketch.getUse64(), sketch.getMinHashesPerWindow()));
 			}
-			
-			threadPool.runWhenThreadAvailable(new HashInput(hashCounts, *minHashHeaps.begin(), seqCopy, input.length(), parameters, trans));
-		
-			input = "";
-		
+			//HashInput chunk type
+			threadPool.runWhenThreadAvailable(new HashInput(fachunk, fastaPool, hashCounts, *minHashHeaps.begin(), parameters, trans));
+
 			minHashHeaps.erase(minHashHeaps.begin());
-		
+
 			while ( threadPool.outputAvailable() )
 			{
 				useThreadOutput(threadPool.popOutputWhenAvailable(), minHashHeaps);
 			}
 		}
-		
-		if ( kseqs.begin() == kseqs.end() )
+
+		while( fastaPool->partNum != 0 )
 		{
-			break;
 		}
-		
-		count++;
-		
-		if ( l >= kmerSize )
-		{
-			input.append(1, '*');
-			input.append((*it)->seq.s, l);
-		}
-		
-		//it++;
-		//
-		//if ( it == kseqs.end() )
-		//{
-		//	it = kseqs.begin();
-		//}
-	}
-	
-	if (  l != -1 )
-	{
-		cerr << "\nERROR: reading inputs" << endl;
-		exit(1);
+
+		delete fastaReader;
+		delete fileReader;
 	}
     
+	delete fastaPool;
+
 	while ( threadPool.running() )
 	{
 		useThreadOutput(threadPool.popOutputWhenAvailable(), minHashHeaps);
 	}
 	
-	for ( int i = 0; i < queryCount; i++ )
-	{
-		gzclose(fps[i]);
-	}
+	//for ( int i = 0; i < queryCount; i++ )
+	//{
+	//	gzclose(fps[i]);
+	//}
 	
 	MinHashHeap minHashHeap(sketch.getUse64(), sketch.getMinHashesPerWindow());
 
@@ -305,12 +356,12 @@ int CommandScreen::run() const
 		delete *i;
 	}
 	
-	if ( count == 0 )
-	{
-		cerr << "\nERROR: Did not find sequence records in inputs" << endl;
-		
-		exit(1);
-	}
+	//if ( count == 0 )
+	//{
+	//	cerr << "\nERROR: Did not find sequence records in inputs" << endl;
+	//	
+	//	exit(1);
+	//}
 	
 	/*
 	if ( parameters.targetCov != 0 )
@@ -600,7 +651,141 @@ CommandScreen::HashOutput * hashSequence(CommandScreen::HashInput * input)
 	
 	return output;
 }
+CommandScreen::HashOutput * hashSequenceChunk(CommandScreen::HashInput * input)
+{
+	CommandScreen::HashOutput * output = new CommandScreen::HashOutput(input->minHashHeap);
+	
+	bool trans = input->trans;
+	
+	bool use64 = input->parameters.use64;
+	uint32_t seed = input->parameters.seed;
+	int kmerSize = input->parameters.kmerSize;
+	bool noncanonical = input->parameters.noncanonical;
+	
+	//char * seq = input->seq;
+	vector<Sketch::Reference> seqs;
+	//real seqence format
+	mash::fa::chunkFormat(*(input->fachunk), seqs); 	
+	input->fastaPool->Release(input->fachunk->chunk);
 
+	string inputSeq="";
+	for(int i = 0; i < seqs.size(); i++)
+	{
+		if(seqs[i].seq.length() >= kmerSize)
+		{
+			inputSeq.append(1, '*');
+			inputSeq.append(seqs[i].seq);
+		}
+	}
+
+	int l = inputSeq.length();
+	char * seq = new char[inputSeq.length()];
+	//
+	memcpy(seq, inputSeq.c_str(), inputSeq.length());
+
+	// uppercase
+	//
+	for ( uint64_t i = 0; i < l; i++ )
+	{
+		if ( ! input->parameters.preserveCase && seq[i] > 96 && seq[i] < 123 )
+		{
+			seq[i] -= 32;
+		}
+	}
+	
+	char * seqRev;
+	
+	if ( ! noncanonical || trans )
+	{
+		seqRev = new char[l];
+		reverseComplement(seq, seqRev, l);
+	}
+	
+	for ( int i = 0; i < (trans ? 6 : 1); i++ )
+	{
+		bool useRevComp = false;
+		int frame = i % 3;
+		bool rev = i > 2;
+		
+		int lenTrans = (l - frame) / 3;
+		
+		char * seqTrans;
+		
+		if ( trans )
+		{
+			seqTrans = new char[lenTrans];
+			translate((rev ? seqRev : seq) + frame, seqTrans, lenTrans);
+		}
+		
+		int64_t lastGood = -1;
+		int length = trans ? lenTrans : l;
+		
+		for ( int j = 0; j < length - kmerSize + 1; j++ )
+		{
+			while ( lastGood < j + kmerSize - 1 && lastGood < length )
+			{
+				lastGood++;
+				
+				if ( trans ? (seqTrans[lastGood] == '*') : (!input->parameters.alphabet[seq[lastGood]]) )
+				{
+					j = lastGood + 1;
+				}
+			}
+			
+			if ( j > length - kmerSize )
+			{
+				break;
+			}
+			
+			const char * kmer;
+			
+			if ( trans )
+			{
+				kmer = seqTrans + j;
+			}
+			else
+			{
+				const char *kmer_fwd = seq + j;
+				const char *kmer_rev = seqRev + length - j - kmerSize;
+				kmer = (noncanonical || memcmp(kmer_fwd, kmer_rev, kmerSize) <= 0) ? kmer_fwd : kmer_rev;
+			}
+			
+			//cout << kmer << '\t' << kmerSize << endl;
+			hash_u hash = getHash(kmer, kmerSize, seed, use64);
+			//cout << kmer << '\t' << hash.hash64 << endl;
+			input->minHashHeap->tryInsert(hash);
+			uint64_t key = use64 ? hash.hash64 : hash.hash32;
+			
+			if ( input->hashCounts.count(key) == 1 )
+			{
+				//cout << "Incrementing " << key << endl;
+				input->hashCounts[key]++;
+			}
+		}
+		
+		if ( trans )
+		{
+			delete [] seqTrans;
+		}
+	}
+	
+	if ( ! noncanonical || trans )
+	{
+		delete [] seqRev;
+	}
+	/*
+	addMinHashes(minHashHeap, seq, l, parameters);
+	
+	if ( parameters.targetCov > 0 && minHashHeap.estimateMultiplicity() >= parameters.targetCov )
+	{
+		l = -1; // success code
+		break;
+	}
+	*/
+	delete [] seq;
+
+	return output;
+}
 double pValueWithin(uint64_t x, uint64_t setSize, double kmerSpace, uint64_t sketchSize)
 {
     if ( x == 0 )
