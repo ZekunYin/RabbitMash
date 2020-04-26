@@ -217,7 +217,8 @@ int CommandScreen::run() const
 				it = kseqs.erase(it);
 				if ( it == kseqs.end() )
 				{
-					it = kseqs.begin();
+					//it = kseqs.begin();
+					break; //no file
 				}
 				//continue;
 			}
@@ -263,12 +264,12 @@ int CommandScreen::run() const
 			input.append((*it)->seq.s, l);
 		}
 		
-		it++;
-		
-		if ( it == kseqs.end() )
-		{
-			it = kseqs.begin();
-		}
+		//it++;
+		//
+		//if ( it == kseqs.end() )
+		//{
+		//	it = kseqs.begin();
+		//}
 	}
 	
 	if (  l != -1 )
