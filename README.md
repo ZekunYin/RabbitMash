@@ -10,3 +10,4 @@ See http://mash.readthedocs.org for more information.
 - [x] add bad check
 - [x] optimize screen operation
 - [ ] supprt fast fastq parser to screen
+- [ ] fix addMinHash for sketch whole file when checking bad characters
