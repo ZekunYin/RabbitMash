@@ -8,4 +8,5 @@ See http://mash.readthedocs.org for more information.
 # TODO
 - [x] fix missing hash value
 - [x] add bad check
-- [ ] optimize screen operation
+- [x] optimize screen operation
+- [ ] supprt fast fastq parser to screen
