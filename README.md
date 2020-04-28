@@ -9,6 +9,7 @@ See http://mash.readthedocs.org for more information.
 - [x] fix missing hash value
 - [x] add bad check
 - [x] optimize screen operation
-- [ ] supprt fast fastq parser to screen
+- [ ] support fast fastq parser to screen
+- [ ] support gziped files
 - [ ] fix addMinHash for sketch whole file when checking bad characters
 - [ ] free mermory intermediately for memory limit
