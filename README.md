@@ -13,3 +13,4 @@ See http://mash.readthedocs.org for more information.
 - [ ] support gziped files
 - [ ] fix addMinHash for sketch whole file when checking bad characters
 - [ ] free mermory intermediately for memory limit
+- [x] bitwise reverseComplement doesn't fit unclean databases.
