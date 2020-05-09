@@ -1784,8 +1784,49 @@ Sketch::SketchOutput * sketchFile(Sketch::SketchInput * input)
 		{
 			reference.length += l;
 		}
+
+		//add the badCheck outside.
+		string  seq = (*it)->seq.s;
+		for ( uint64_t k = 0; k < seq.length(); k++ )
+    	{
+    	    if ( ! parameters.preserveCase && seq[k] > 96 && seq[k] < 123 )
+    	    {
+    	        seq[k] -= 32;
+    	    }
+    	}
+
+		int j = 0;
+		int start = 0;
+		while(j < seq.length()){
+			if( parameters.alphabet[seq[j]] )
+			{
+				j++;
+				if(j == seq.length() && j - start >= parameters.kmerSize){
+					string subSeq = seq.substr(start, j - start);	
+    				addMinHashes(minHashHeap, subSeq.c_str(), subSeq.length(), parameters);
+				}
+				continue;
+			}else{
+
+				if(j - start >= parameters.kmerSize)
+				{
+					//get substr without bad char
+					string subSeq = seq.substr(start, j - start);	
+    				addMinHashes(minHashHeap, subSeq.c_str(), subSeq.length(), parameters);
+					j++;
+					while(j < seq.length() && !parameters.alphabet[seq[j]]) j++;
+					if(j >= seq.length()) break;
+					start = j;
+				}else{
+					j++;	
+					while(j < seq.length() && !parameters.alphabet[seq[j]]) j++;
+					if(j >= seq.length()) break;
+					start = j;
+				}
+			}
+		}
 		
-		addMinHashes(minHashHeap, (*it)->seq.s, l, parameters);
+//		addMinHashes(minHashHeap, (*it)->seq.s, l, parameters);
 		
 		if ( parameters.reads && parameters.targetCov > 0 && minHashHeap.estimateMultiplicity() >= parameters.targetCov )
 		{
