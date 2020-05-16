@@ -1,6 +1,6 @@
-CXXFLAGS += -O3 -std=c++14 -Isrc -I@capnp@/include -I@mathinc@
+CXXFLAGS += -O3 -std=c++14 -Isrc -I@capnp@/include -I@mathinc@ 
 CPPFLAGS += @CPPFLAGS@
-
+CFLAGS += -I@libdeflate@
 UNAME_S=$(shell uname -s)
 
 ifeq ($(UNAME_S),Darwin)
@@ -39,8 +39,8 @@ OBJECTS=$(SOURCES:.cpp=.o) src/mash/capnp/MinHash.capnp.o
 
 all : mash libmash.a
 
-mash : libmash.a src/mash/memcpyWrap.o
-	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o mash src/mash/memcpyWrap.o libmash.a @capnp@/lib/libcapnp.a @capnp@/lib/libkj.a @mathlib@ -lstdc++ -lz -lm -lpthread
+mash : libmash.a src/mash/memcpyWrap.o src/mash/libdeflate/decompress.o src/mash/libdeflate/prog_util.o
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o mash src/mash/memcpyWrap.o src/mash/libdeflate/decompress.o src/mash/libdeflate/prog_util.o libmash.a @capnp@/lib/libcapnp.a @capnp@/lib/libkj.a @mathlib@ @libdeflate@/libdeflate.a -lstdc++ -lz -lm -lpthread
 
 libmash.a : $(OBJECTS)
 	ar -cr libmash.a $(OBJECTS)
@@ -55,6 +55,12 @@ libmash.a : $(OBJECTS)
 	$(CXX) -c $(CXXFLAGS) $(CPPFLAGS) -o $@ $<
 
 src/mash/memcpyWrap.o : src/mash/memcpyWrap.c
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+src/mash/libdeflate/decompress.o : src/mash/libdeflate/decompress.c
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+src/mash/libdeflate/prog_util.o : src/mash/libdeflate/prog_util.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 src/mash/capnp/MinHash.capnp.c++ src/mash/capnp/MinHash.capnp.h : src/mash/capnp/MinHash.capnp

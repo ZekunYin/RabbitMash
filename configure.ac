@@ -7,6 +7,13 @@ then
 	with_capnp=/usr/local/
 fi
 
+AC_ARG_WITH(libdeflate, [  --with-libdeflate=<path/to/libdeflate>     libdeflate install dir (default: /usr/local/)])
+
+if test "$with_libdeflate" == ""
+then
+	with_libdeflate=/usr/local/
+fi
+
 AC_ARG_WITH(gsl, [  --with-gsl=<path/to/gsl>     GNU Scientific Library install dir (default: /usr/local/)])
 AC_ARG_ENABLE(static-gsl, [  --enable-static-gsl])
 
@@ -41,6 +48,14 @@ AC_CHECK_HEADER(capnp/common.h, [result=1], [result=0])
 if test $result == 0
 then
 	AC_MSG_ERROR([Cap'n Proto headers not found.])
+fi
+
+CPPFLAGS="-I$with_libdeflate"
+AC_CHECK_HEADER(libdeflate.h, [result=1], [result=0])
+
+if test $result == 0
+then
+	AC_MSG_ERROR([libdeflate headers not found.])
 fi
 
 if test "$with_boost" == ""
@@ -102,5 +117,6 @@ fi
 AC_MSG_NOTICE([CPPFLAGS: $CPPFLAGS])
 
 AC_SUBST(capnp, $with_capnp)
+AC_SUBST(libdeflate, $with_libdeflate)
 
 AC_OUTPUT(Makefile)
