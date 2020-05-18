@@ -11,8 +11,8 @@ See http://mash.readthedocs.org for more information.
 - [x] optimize screen operation
 - [ ] support fast fastq parser to screen
 - [ ] support gziped files
-- [ ] fix addMinHash for sketch whole file when checking bad characters
-- [ ] free mermory intermediately for memory limit
+- [x] fix addMinHash for sketch whole file when checking bad characters
+- [x] free mermory intermediately for memory limit
 - [x] bitwise reverseComplement doesn't fit unclean databases.
 - [ ] the SIMD MurmurHash3 can't work normally when kmerSize is greater than 64.
 - [ ] the MurmurHash3_x86_128 version isn't vectorized.
