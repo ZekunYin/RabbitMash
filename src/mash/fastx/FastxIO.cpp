@@ -261,8 +261,9 @@ FastqDataChunk* FastqReader::readNextChunk(){
 //		return NULL;
 //	}
 //}
-int chunkFormat(FastqDataChunk* &chunk, std::vector<Sketch::Reference> &data, bool mHasQuality = true){
+int chunkFormat(FastqChunk* &fqChunk, std::vector<Sketch::Reference> &data, bool mHasQuality = true){
 	//format a whole chunk and return number of reads
+	FastqDataChunk * chunk = fqChunk->chunk;
 	int seq_count = 0;
 	int line_count = 0;
 	int pos_ = 0;

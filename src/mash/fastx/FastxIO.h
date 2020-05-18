@@ -102,7 +102,7 @@ private:
 	uint32 numParts;
 };
 
-int chunkFormat(FastqDataChunk* &chunk, std::vector< Sketch::Reference > &,bool);
+int chunkFormat(FastqChunk* &chunk, std::vector< Sketch::Reference > &,bool);
 
 //single pe file 
 //int pairedChunkFormat(FastqDataChunk* &chunk, std::vector<ReadPair*>&,bool mHasQuality);

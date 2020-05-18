@@ -88,6 +88,7 @@ public:
 
 		//}else{
 		mFile = FOPEN(fileName_.c_str(), "rb");
+		std::cerr << "fasta file name: " << fileName_.c_str() << std::endl;
 		if(mFile == NULL){
 			throw DsrcException(("Can not open file to read: " + fileName_).c_str()); //--------------need to change----------//
 		}
@@ -288,6 +289,28 @@ public:
 			mFile = FOPEN(fileName_.c_str(), "rb");
 			if(mFile == NULL){
 				throw DsrcException(("Can not open file to read: " + fileName_).c_str()); //--------------need to change----------//
+		//}
+	}
+		
+			
+	}
+
+	FastqFileReader(int fd)
+		:	swapBuffer(SwapBufferSize)
+		,	bufferSize(0)
+		,	eof(false)
+		,	usesCrlf(false)
+		,	isZipped(false)
+	{	
+		//if(ends_with(fileName_,".gz")){
+		//	mZipFile = gzopen(fileName_.c_str(),"r");
+		//	isZipped=true;
+		//	gzrewind(mZipFile);
+
+		//}else{
+			mFile = FDOPEN(fd, "rb");
+			if(mFile == NULL){
+				throw DsrcException("Can not open file to read: " ); //--------------need to change----------//
 		//}
 	}
 		

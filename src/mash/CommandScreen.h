@@ -117,14 +117,28 @@ public:
     	trans(transNew)
     	{}
     	
-    	HashInput(mash::fa::FastaChunk *fachunkNew, mash::fa::FastaDataPool * fastaPoolNew, robin_hood::unordered_map<uint64_t, std::atomic<uint32_t> > & hashCountsNew, MinHashHeap * minHashHeapNew, const Sketch::Parameters & parametersNew, bool transNew)
+    	HashInput(mash::fa::FastaChunk *fachunkNew, mash::fa::FastaDataPool * fastaPoolNew, robin_hood::unordered_map<uint64_t, std::atomic<uint32_t> > & hashCountsNew, MinHashHeap * minHashHeapNew, const Sketch::Parameters & parametersNew, bool transNew, bool isFANew, bool isFQNew)
 		:
 		fachunk(fachunkNew),
 		fastaPool(fastaPoolNew),
     	hashCounts(hashCountsNew),
     	minHashHeap(minHashHeapNew),
     	parameters(parametersNew),
-    	trans(transNew)
+    	trans(transNew),
+		isFA(isFANew),
+		isFQ(isFQNew)
+		{}
+
+    	HashInput(mash::fq::FastqChunk *fqchunkNew, mash::fq::FastqDataPool * fastqPoolNew, robin_hood::unordered_map<uint64_t, std::atomic<uint32_t> > & hashCountsNew, MinHashHeap * minHashHeapNew, const Sketch::Parameters & parametersNew, bool transNew, bool isFANew, bool isFQNew)
+		:
+		fqchunk(fqchunkNew),
+		fastqPool(fastqPoolNew),
+    	hashCounts(hashCountsNew),
+    	minHashHeap(minHashHeapNew),
+    	parameters(parametersNew),
+    	trans(transNew),
+		isFA(isFANew),
+		isFQ(isFQNew)
 		{}
 
     	~HashInput()
@@ -145,10 +159,14 @@ public:
 		robin_hood::unordered_map<uint64_t, std::atomic<uint32_t> > & hashCounts;
 		MinHashHeap * minHashHeap;
 
+		bool isFA;
+		bool isFQ;
 		//for FAST fasta IO
 		mash::fa::FastaChunk *fachunk;
 		mash::fa::FastaDataPool *fastaPool;
-
+		//for fastq
+		mash::fq::FastqChunk *fqchunk;
+		mash::fq::FastqDataPool *fastqPool;
     };
     
     struct HashOutput

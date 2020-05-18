@@ -73,7 +73,10 @@ int CommandScreen::run() const
 	}
 	
 	bool sat = false;//options.at("saturation").active;
-	
+
+	bool isFQ = false;
+	bool isFA = true;
+
     double pValueMax = options.at("pvalue").getArgumentAsNumber();
     double identityMin = options.at("identity").getArgumentAsNumber();
     
@@ -161,11 +164,15 @@ int CommandScreen::run() const
 	ThreadPool<CommandScreen::HashInput, CommandScreen::HashOutput> threadPool(hashSequenceChunk, parameters.parallelism);
 	
 	// open all query files for FAST fasta IO 
-	mash::fa::FastaDataPool *fastaPool    = new mash::fa::FastaDataPool(32, 1<<20);
+	mash::fa::FastaDataPool *fastaPool    = new mash::fa::FastaDataPool(32, 1<<20); //1MB block size
+	mash::fq::FastqDataPool *fastqPool    = new mash::fq::FastqDataPool(32, 1<<22); //4MB block size at least 2MB for fastq file
 
 	std::vector<FILE *> inStreams;
-	for(int i = 1; i <= queryCount; i++)
+	std::vector<std::string> queryNames;
+	for(int i = 1; i <= queryCount; i++){
 		inStreams.push_back( fopen(arguments[i].c_str(), "r"));
+		queryNames.push_back( arguments[i] );
+	}
 
 	//// open all query files for round robin
 	////
@@ -290,17 +297,50 @@ int CommandScreen::run() const
 	//	exit(1);
 	//}
 
+	mash::fa::FastaFileReader *faFileReader ;
+	mash::fa::FastaReader     *fastaReader;
+	mash::fq::FastqFileReader *fqFileReader;
+	mash::fq::FastqReader     *fastqReader;
+
 	for(int i = 0; i < inStreams.size(); i++)
 	{
-		mash::fa::FastaFileReader *fileReader = new mash::fa::FastaFileReader(fileno(inStreams[i]), parameters.kmerSize - 1);
-		mash::fa::FastaReader *fastaReader    = new mash::fa::FastaReader(*fileReader, *fastaPool);
+	
+		isFA = hasSuffix(queryNames[i], ".fa") || hasSuffix(queryNames[i], ".fasta") || hasSuffix(queryNames[i], ".fna");
+		isFQ = hasSuffix(queryNames[i], ".fq") || hasSuffix(queryNames[i], ".fastq");
+		if(!isFA && !isFQ)
+		{
+			cerr <<"Can not recognize suffix of " << queryNames[i] << endl;
+			cerr <<"Please make sure files are end with .fa/.fna/.fasta/.fq/.fastq " << endl << std::flush;
+			exit(1);
+		}
 
+		if(isFA)
+			cerr << "query file is in FASTA format" << endl;
+		if(isFQ)
+			cerr << "query file is in FASTQ format" << endl;
+
+		if(isFA){
+			faFileReader = new mash::fa::FastaFileReader(fileno(inStreams[i]), parameters.kmerSize - 1);
+			fastaReader    = new mash::fa::FastaReader(*faFileReader, *fastaPool);
+		}else if(isFQ){
+			
+			fqFileReader = new mash::fq::FastqFileReader(fileno(inStreams[i]));
+			fastqReader    = new mash::fq::FastqReader(*fqFileReader, *fastqPool);
+		}
 		int nChunks = 0;
 		while(true)
 		{
+			mash::fa::FastaChunk *fachunk;
+			mash::fq::FastqChunk *fqchunk = new mash::fq::FastqChunk;
 
-			mash::fa::FastaChunk *fachunk = fastaReader->readNextChunk();
-			if(fachunk == NULL) break;
+			if(isFA){
+				fachunk = fastaReader->readNextChunk();
+				if(fachunk == NULL) break;
+			}else if(isFQ){
+				fqchunk->chunk = fastqReader->readNextChunk();
+				if(fqchunk->chunk == NULL) break;
+			}
+				
 			nChunks++;	
 			
 			//cerr << "nChunks: " << nChunks << endl << std::flush;
@@ -309,7 +349,10 @@ int CommandScreen::run() const
 				minHashHeaps.emplace(new MinHashHeap(sketch.getUse64(), sketch.getMinHashesPerWindow()));
 			}
 			//HashInput chunk type
-			threadPool.runWhenThreadAvailable(new HashInput(fachunk, fastaPool, hashCounts, *minHashHeaps.begin(), parameters, trans));
+			if(isFA)
+				threadPool.runWhenThreadAvailable(new HashInput(fachunk, fastaPool, hashCounts, *minHashHeaps.begin(), parameters, trans, isFA, isFQ));
+			else if(isFQ)
+				threadPool.runWhenThreadAvailable(new HashInput(fqchunk, fastqPool, hashCounts, *minHashHeaps.begin(), parameters, trans, isFA, isFQ));
 
 			minHashHeaps.erase(minHashHeaps.begin());
 
@@ -319,15 +362,21 @@ int CommandScreen::run() const
 			}
 		}
 
-		while( fastaPool->partNum != 0 )
+		while( fastaPool->partNum != 0 || fastqPool->partNum != 0)
 		{
 		}
 
-		delete fastaReader;
-		delete fileReader;
+		if(isFA){
+			delete fastaReader;
+			delete faFileReader;
+		}else if(isFQ){
+			delete fastqReader;
+			delete fqFileReader;
+		}
 	}
     
 	delete fastaPool;
+	delete fastqPool;
 
 	while ( threadPool.running() )
 	{
@@ -656,7 +705,10 @@ CommandScreen::HashOutput * hashSequenceChunk(CommandScreen::HashInput * input)
 	CommandScreen::HashOutput * output = new CommandScreen::HashOutput(input->minHashHeap);
 	
 	bool trans = input->trans;
-	
+
+	bool isFA = input->isFA;
+	bool isFQ = input->isFQ;
+
 	bool use64 = input->parameters.use64;
 	uint32_t seed = input->parameters.seed;
 	int kmerSize = input->parameters.kmerSize;
@@ -665,8 +717,15 @@ CommandScreen::HashOutput * hashSequenceChunk(CommandScreen::HashInput * input)
 	//char * seq = input->seq;
 	vector<Sketch::Reference> seqs;
 	//real seqence format
-	mash::fa::chunkFormat(*(input->fachunk), seqs); 	
-	input->fastaPool->Release(input->fachunk->chunk);
+	assert((isFA && isFQ) == false);
+
+	if(isFA){
+		mash::fa::chunkFormat(*(input->fachunk), seqs); 	
+		input->fastaPool->Release(input->fachunk->chunk);
+	}else if(isFQ){
+		mash::fq::chunkFormat(input->fqchunk, seqs, true); 	
+		input->fastqPool->Release(input->fqchunk->chunk);
+	}
 
 	string inputSeq="";
 	for(int i = 0; i < seqs.size(); i++)
