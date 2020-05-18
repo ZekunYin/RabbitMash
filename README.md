@@ -9,8 +9,8 @@ See http://mash.readthedocs.org for more information.
 - [x] fix missing hash value
 - [x] add bad check
 - [x] optimize screen operation
-- [ ] support fast fastq parser to screen
-- [ ] support gziped files
+- [x] support fast fastq parser to screen
+- [ ] support gziped files (It can be done but it seems inefficient.)
 - [x] fix addMinHash for sketch whole file when checking bad characters
 - [x] free mermory intermediately for memory limit
 - [x] bitwise reverseComplement doesn't fit unclean databases.
