@@ -18,7 +18,7 @@
 #include "ThreadPool.h"
 #include "robin_hood.h"
 
-#include "fasta/FastaChunk.h"
+#include "fastx/FastxChunk.h"
 //#include "fasta/FastaIO.h"
 //#include "fasta/FastaStream.h"
 
@@ -143,10 +143,22 @@ public:
         std::string name;
         std::string comment;
         std::string seq;
+		std::string quality; //support FASTQ format
+		std::string strand;  //support FASTQ format
         uint64_t length;
         HashList hashesSorted;
         std::vector<uint32_t> counts;
 		uint64_t gid; //for fasta IO
+
+		//Reference(std::string nameNew, std::string commentNew, std::string seqNew, std::string strandNew = "", std::string qualityNew = "")
+		//:
+		//name(nameNew),
+		//comment(commentNew),
+		//seq(seqNew),
+		//strand(strandNew),
+		//quality(qualityNew){}
+
+	
     };
     
     class SketchInput

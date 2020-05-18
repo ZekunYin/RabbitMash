@@ -32,8 +32,8 @@ SOURCES=\
 	src/mash/Sketch.cpp \
 	src/mash/sketchParameterSetup.cpp \
 	src/mash/CommandOutputbin.cpp \
-	src/mash/fasta/FastaIO.cpp \
-	src/mash/fasta/FastaStream.cpp \
+	src/mash/fastx/FastxIO.cpp \
+	src/mash/fastx/FastxStream.cpp \
 
 OBJECTS=$(SOURCES:.cpp=.o) src/mash/capnp/MinHash.capnp.o
 

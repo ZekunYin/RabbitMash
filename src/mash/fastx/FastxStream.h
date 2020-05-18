@@ -5,6 +5,8 @@
   Authors: Lucas Roguski and Sebastian Deorowicz
   
   Version: 2.00
+
+  last modified by Zekun Yin 2020/5/18
 */
 #ifndef H_FASTQSTREAM
 #define H_FASTQSTREAM
@@ -15,7 +17,7 @@
 
 #include "Buffer.h"
 //#include "zlib/zlib.h" //remove support for compressed files
-#include "FastaChunk.h"
+#include "FastxChunk.h"
 #include "utils.h"
 #include <iostream>
 #include <string>
@@ -260,6 +262,144 @@ private:
 
 
 } // namespace fa
+
+namespace fq
+{
+
+class FastqFileReader
+{
+private:
+	static const uint32 SwapBufferSize = 1 << 20; // the longest FASTQ sequence todate is no longer than 1Mbp. 
+
+public:
+	FastqFileReader(const std::string& fileName_)
+		:	swapBuffer(SwapBufferSize)
+		,	bufferSize(0)
+		,	eof(false)
+		,	usesCrlf(false)
+		,	isZipped(false)
+	{	
+		//if(ends_with(fileName_,".gz")){
+		//	mZipFile = gzopen(fileName_.c_str(),"r");
+		//	isZipped=true;
+		//	gzrewind(mZipFile);
+
+		//}else{
+			mFile = FOPEN(fileName_.c_str(), "rb");
+			if(mFile == NULL){
+				throw DsrcException(("Can not open file to read: " + fileName_).c_str()); //--------------need to change----------//
+		//}
+	}
+		
+			
+	}
+
+	~FastqFileReader()
+	{
+		//if(mFile != NULL || mZipFile !=NULL)
+		if( mFile != NULL )
+			Close();
+		delete mFile;
+		//delete mZipFile;
+	}
+
+	bool Eof() const
+	{
+		return eof;
+	}
+
+	bool ReadNextChunk(FastqDataChunk* chunk_);
+	bool ReadNextPairedChunk(FastqDataChunk* chunk_);
+	void Close()
+	{
+		if(mFile != NULL)
+			FCLOSE(mFile);
+		//if(mZipFile !=NULL && isZipped){
+		//	gzclose(mZipFile);
+		//	mZipFile=NULL;
+		//}
+
+		mFile = NULL;
+	}
+
+	int64 Read(byte* memory_, uint64 size_)
+	{	//if(isZipped){
+		//	int64 n = gzread(mZipFile,memory_,size_);
+		//	if(n == -1)
+		//		cerr<<"Error to read gzip file" <<endl;
+		//	return n;
+		//}
+		//else{
+			int64 n = fread(memory_, 1, size_, mFile) ;
+			return n;
+		//}
+		
+		
+	}
+private:
+	core::Buffer	swapBuffer;
+	uint64			bufferSize;
+	bool			eof;
+	bool			usesCrlf;
+	bool			isZipped;
+	FILE*           mFile;
+	//gzFile          mZipFile;
+
+	uint64 lastOneReadPos;
+	uint64 lastTwoReadPos;
+
+	uint64 GetNextRecordPos(uchar* data_, uint64 pos_, const uint64 size_);
+	uint64 GetPreviousRecordPos(uchar* data_, uint64 pos_, const uint64 size_);
+
+	void SkipToEol(uchar* data_, uint64& pos_, const uint64 size_)
+	{
+		//cout << "SkipToEol " << pos_ << " " << size_ << endl;
+		ASSERT(pos_ < size_);
+
+		while (data_[pos_] != '\n' && data_[pos_] != '\r' && pos_ < size_)
+			++pos_;
+
+		if (data_[pos_] == '\r' && pos_ < size_)
+		{
+			if (data_[pos_ + 1] == '\n')
+			{
+				usesCrlf = true;
+				++pos_;
+			}
+		}
+	}
+	//just to the start of a line
+	void SkipToSol(uchar* data_, uint64& pos_, const uint64 size_){
+		//std::cout<<"SkipToSol:"<<data_[pos_]<<std::endl;
+		ASSERT(pos_ < size_);
+		if(data_[pos_] =='\n'){
+			--pos_;
+		}
+		if(data_[pos_] =='\r'){
+			usesCrlf = true;
+			pos_--;
+		}
+		//find next '\n' or \n\r
+		while(data_[pos_] != '\n' &&  data_[pos_] != '\r'){
+			//std::cout<<"pos_;"<<pos_<<std::endl;
+			--pos_;
+		}
+		if(data_[pos_] =='\n'){
+			--pos_;
+		}
+		if(data_[pos_] =='\r'){
+			usesCrlf = true;
+			pos_--;
+		}
+
+	}
+	
+
+
+};
+
+
+} // namespace fq
 
 } // namespace mash
 

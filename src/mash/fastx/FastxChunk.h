@@ -5,10 +5,12 @@
   Authors: Lucas Roguski and Sebastian Deorowicz
   
   Version: 2.00
+
+  last modified by Zekun Yin 2020/5/18
 */
 
-#ifndef H_FASTA_CHUNK
-#define H_FASTA_CHUNK
+#ifndef H_FASTX_CHUNK
+#define H_FASTX_CHUNK
 
 #include "Globals.h"
 #include "Common.h"
@@ -50,6 +52,16 @@ struct FastaChunk{
 
 
 } // namespace fa
+
+namespace fq
+{
+
+typedef core::DataChunk FastqDataChunk;
+
+typedef core::TDataQueue<FastqDataChunk> FastqDataQueue;
+typedef core::TDataPool<FastqDataChunk> FastqDataPool;
+
+} // namespace fq
 
 } // namespace mash
 

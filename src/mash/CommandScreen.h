@@ -7,7 +7,7 @@
 #ifndef INCLUDED_CommandScreen
 #define INCLUDED_CommandScreen
 
-#include "fasta/FastaChunk.h"
+#include "fastx/FastxChunk.h"
 
 #include "Command.h"
 #include "Sketch.h"

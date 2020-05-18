@@ -5,9 +5,9 @@
 // See the LICENSE.txt file included with this software for license information.
 
 //Fast fasta file IO 
-#include "fasta/FastaIO.h"
-#include "fasta/FastaStream.h"
-#include "fasta/FastaChunk.h"
+#include "fastx/FastxIO.h"
+#include "fastx/FastxStream.h"
+#include "fastx/FastxChunk.h"
 
 #include "CommandScreen.h"
 #include "CommandDistance.h" // for pvalue
