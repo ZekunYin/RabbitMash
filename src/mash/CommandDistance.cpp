@@ -83,6 +83,7 @@ namespace mash {
 #endif
 #endif
 
+
         int threads = options.at("threads").getArgumentAsNumber();
         bool list = options.at("list").active;
         bool table = options.at("table").active;
@@ -108,6 +109,9 @@ namespace mash {
         int warningCount = 0;
 
         const string & fileReference = arguments[0];
+
+		string oFileName = "/home/ssd/dist_output.bin";
+		ofstream oFile(oFileName, ios::out | ios::binary);
 
         bool isSketch = hasSuffix(fileReference, suffixSketch);
 
@@ -262,13 +266,13 @@ namespace mash {
 
             while ( threadPool.outputAvailable() )
             {
-                writeOutput(threadPool.popOutputWhenAvailable(), table, comment);
+                writeOutput(threadPool.popOutputWhenAvailable(), table, comment, oFile);
             }
         }
 
         while ( threadPool.running() )
         {
-            writeOutput(threadPool.popOutputWhenAvailable(), table, comment);
+            writeOutput(threadPool.popOutputWhenAvailable(), table, comment, oFile);
         }
 
         if ( warningCount > 0 && ! parameters.reads )
@@ -276,65 +280,50 @@ namespace mash {
             warnKmerSize(parameters, *this, lengthMax, lengthMaxName, randomChance, kMin, warningCount);
         }
 
+		oFile.close();
         return 0;
     }
 
-    void CommandDistance::writeOutput(CompareOutput * output, bool table, bool comment) const
+    void CommandDistance::writeOutput(CompareOutput * output, bool table, bool comment, ofstream &oFile) const
     {
         uint64_t i = output->indexQuery;
         uint64_t j = output->indexRef;
-
-        for ( uint64_t k = 0; k < output->pairCount && i < output->sketchQuery.getReferenceCount(); k++ )
+		Result *buffer = new Result[output->pairCount];
+		uint64_t k;
+        for ( k = 0; k < output->pairCount && i < output->sketchQuery.getReferenceCount(); k++ )
         {
             const CompareOutput::PairOutput * pair = &output->pairs[k];
 
-            if ( table && j == 0 )
-            {
-                cout << output->sketchQuery.getReference(i).name;
-            }
+        //    if ( table && j == 0 )
+        //    {
+        //        cout << output->sketchQuery.getReference(i).name;
+        //    }
 
             if ( table )
             {
-                cout << '\t';
 
                 if ( pair->pass )
                 {
-                    cout << pair->distance;
+					buffer[k].queryID = i;
+					buffer[k].refID = j;
+					buffer[k].distance = pair->distance;
                 }
             }
             else if ( pair->pass )
             {
-                cout << output->sketchRef.getReference(j).name;
+				buffer[k].queryID = i;
+				buffer[k].refID = j;
+				buffer[k].distance = pair->distance;
+				buffer[k].pValue = pair->pValue;
+				buffer[k].number = pair->numer;
+				buffer[k].denom = pair->denom;
 
-                if ( comment )
-                {
-                    cout << ':' << output->sketchRef.getReference(j).comment;
-                }
-
-                cout << '\t' << output->sketchQuery.getReference(i).name;
-
-                if ( comment )
-                {
-                    cout << ':' << output->sketchQuery.getReference(i).comment;
-                }
-
-                cout << '\t' << pair->distance << '\t' << pair->pValue << '\t' << pair->numer << '/' << pair->denom << endl;
-            }
-
-            j++;
-
-            if ( j == output->sketchRef.getReferenceCount() )
-            {
-                if ( table )
-                {
-                    cout << endl;
-                }
-
-                j = 0;
-                i++;
-            }
+            	j++;
+			}
         }
-
+	
+		oFile.write((char*)buffer, k * sizeof(Result));
+		delete buffer;
         delete output;
     }
 

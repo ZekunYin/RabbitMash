@@ -9,13 +9,23 @@
 
 #include "Command.h"
 #include "Sketch.h"
+#include <fstream>
 
 namespace mash {
 
 class CommandDistance : public Command
 {
 public:
-    
+
+   	struct Result{
+		int queryID;
+		int refID;
+		float distance;
+		float pValue;
+		int number = 0;
+		int denom = 0;
+	};
+
     struct CompareInput
     {
         CompareInput(const Sketch & sketchRefNew, const Sketch & sketchQueryNew, uint64_t indexRefNew, uint64_t indexQueryNew, uint64_t pairCountNew, const Sketch::Parameters & parametersNew, double maxDistanceNew, double maxPValueNew)
@@ -86,6 +96,7 @@ public:
 private:
     
     void writeOutput(CompareOutput * output, bool table, bool comment) const;
+    void writeOutput(CompareOutput * output, bool table, bool comment, std::ofstream &) const;
 };
 
 CommandDistance::CompareOutput * compare(CommandDistance::CompareInput * input);
