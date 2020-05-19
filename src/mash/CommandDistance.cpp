@@ -11,9 +11,21 @@
 #include "ThreadPool.h"
 #include "sketchParameterSetup.h"
 #include <math.h>
-#include <emmintrin.h>
-#include <smmintrin.h>
+
+#if defined __AVX512F__ && defined __AVX512CD__
 #include <immintrin.h>
+#else 
+#if defined __AVX2__
+#include <smmintrin.h>
+#else
+#if defined __SSE4_1__
+#include <emmintrin.h>
+#else
+
+#endif
+#endif
+#endif
+
 #ifdef USE_BOOST
 #include <boost/math/distributions/binomial.hpp>
 using namespace::boost::math;
@@ -55,15 +67,15 @@ namespace mash {
 #else 
 #if defined __AVX2__
         cerr << "Using AVX2 instructions" << endl;
-        cerr << "Not implemented yet! Please use:" << endl;
-        cerr << "./configure --disable-simd" << endl;
-        //TODO: implement by avx2
+        //cerr << "Not implemented yet! Please use:" << endl;
+        //cerr << "./configure --disable-simd" << endl;
+        //TODO: implement by avx2-----DONE by zjx
 #else
 #if defined __SSE4_1__
         cerr << "Using SSE4 instructions" << endl;
-        cerr << "Not implemented yet! Please use:" << endl;
-        cerr << "./configure --disable-simd" << endl;
-        //TODO:implement by sse
+        //cerr << "Not implemented yet! Please use:" << endl;
+        //cerr << "./configure --disable-simd" << endl;
+        //TODO:implement by sse----DONE by zjx
 #else
         cerr << "No SIMD instructions used" << endl;
         //implement without optimization
