@@ -52,6 +52,7 @@ namespace mash {
         addOption("pvalue", Option(Option::Number, "v", "Output", "Maximum p-value to report.", "1.0", 0., 1.));
         addOption("distance", Option(Option::Number, "d", "Output", "Maximum distance to report.", "1.0", 0., 1.));
         addOption("comment", Option(Option::Boolean, "C", "Output", "Show comment fields with reference/query names (denoted with ':').", "1.0", 0., 1.));
+        addOption("binOutput", Option(Option::String, "o", "Output", "Output file name in binary format", ""));
         useSketchOptions();
     }
 
@@ -92,6 +93,11 @@ namespace mash {
         double pValueMax = options.at("pvalue").getArgumentAsNumber();
         double distanceMax = options.at("distance").getArgumentAsNumber();
 
+		string oFileName = options.at("binOutput").argument;
+
+		if (oFileName == "") oFileName = "output.bin";
+		cerr << "Results will be written to " << oFileName << endl;
+
         Sketch::Parameters parameters;
 
         if ( sketchParameterSetup(parameters, *(Command *)this) )
@@ -110,7 +116,7 @@ namespace mash {
 
         const string & fileReference = arguments[0];
 
-		string oFileName = "/home/ssd/dist_output.bin";
+		//string oFileName = "/home/ssd/dist_output.bin";
 		ofstream oFile(oFileName, ios::out | ios::binary);
 
         bool isSketch = hasSuffix(fileReference, suffixSketch);
