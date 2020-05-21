@@ -118,7 +118,10 @@ namespace mash {
 
 		//string oFileName = "/home/ssd/dist_output.bin";
 		ofstream oFile(oFileName, ios::out | ios::binary);
-
+		if(!oFile.is_open()){
+			cerr << "Cann't open output file: " << oFileName << endl;
+			exit(1);
+		}
         bool isSketch = hasSuffix(fileReference, suffixSketch);
 
         if ( isSketch )
@@ -329,6 +332,7 @@ namespace mash {
         }
 	
 		oFile.write((char*)buffer, k * sizeof(Result));
+		oFile.flush();
 		delete buffer;
         delete output;
     }
