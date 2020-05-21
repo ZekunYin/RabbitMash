@@ -117,7 +117,7 @@ namespace mash {
         const string & fileReference = arguments[0];
 
 		//string oFileName = "/home/ssd/dist_output.bin";
-		ofstream oFile(oFileName, ios::out | ios::binary);
+		ofstream oFile(oFileName, ios::out | ios::binary | ios::trunc);
 		if(!oFile.is_open()){
 			cerr << "Cann't open output file: " << oFileName << endl;
 			exit(1);
