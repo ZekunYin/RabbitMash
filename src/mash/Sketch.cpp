@@ -31,8 +31,22 @@
 #include <list>
 #include <string.h>
 
-//#if defined (__ICC) || defined (__INTEL_COMPILER)
+#if defined __AVX512F__ && defined __AVX512CD__
 #include <immintrin.h>
+#else 
+#if defined __AVX2__
+#include <smmintrin.h>
+#else
+#if defined __SSE4_1__
+#include <emmintrin.h>
+#else
+
+#endif
+#endif
+#endif
+
+//#if defined (__ICC) || defined (__INTEL_COMPILER)
+//#include <immintrin.h>
 //#endif
 
 #define SET_BINARY_MODE(file)
@@ -476,7 +490,7 @@ bool Sketch::sketchFileByChunk(FILE * file, ThreadPool<Sketch::SketchInput, Sket
 	//gzFile fp = gzdopen(fileno(file), "r");
 	//kseq_t *seq = kseq_init(fp);
 	
-	mash::fa::FastaDataPool *fastaPool    = new mash::fa::FastaDataPool(32, 1<<26);
+	mash::fa::FastaDataPool *fastaPool    = new mash::fa::FastaDataPool(64, 1<<20);
 	mash::fa::FastaFileReader *fileReader = new mash::fa::FastaFileReader(fileno(file), parameters.kmerSize - 1);
 	mash::fa::FastaReader *fastaReader    = new mash::fa::FastaReader(*fileReader, *fastaPool);
     int l;
