@@ -164,8 +164,8 @@ int CommandScreen::run() const
 	ThreadPool<CommandScreen::HashInput, CommandScreen::HashOutput> threadPool(hashSequenceChunk, parameters.parallelism);
 	
 	// open all query files for FAST fasta IO 
-	mash::fa::FastaDataPool *fastaPool    = new mash::fa::FastaDataPool(32, 1<<20); //1MB block size
-	mash::fq::FastqDataPool *fastqPool    = new mash::fq::FastqDataPool(32, 1<<22); //4MB block size at least 2MB for fastq file
+	mash::fa::FastaDataPool *fastaPool    = new mash::fa::FastaDataPool(64, 1<<20); //1MB block size
+	mash::fq::FastqDataPool *fastqPool    = new mash::fq::FastqDataPool(64, 1<<22); //4MB block size at least 2MB for fastq file
 
 	std::vector<FILE *> inStreams;
 	std::vector<std::string> queryNames;
