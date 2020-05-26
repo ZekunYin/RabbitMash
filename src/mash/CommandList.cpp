@@ -102,7 +102,10 @@ void CommandList::showLicense()
 	cout << "\n\
 PURPOSE\n\
 \n\
-Mash is a fast sequence distance estimator that uses the MinHash\n\
+RabbitMash is an efficient highly optimized implementation of Mash\n\
+which can take full advantage of modern hardware including \n\
+multi-threading, vectorization, and fast I/O.\n\
+RabbitMash is a fast sequence distance estimator that uses the MinHash\n\
 algorithm and is designed to work with genomes and metagenomes in the\n\
 form of assemblies or reads. It is implemented in C++ and is\n\
 distributed with:\n\
@@ -118,6 +121,20 @@ MurmurHash3\n\
 Open Bloom Filter\n\
   https://code.google.com/p/bloom/source/browse/trunk/bloom_filter.hpp\n\
   Common Public License\n\
+\n\
+Mash\n\
+  https://github.com/marbl/Mash\n\
+  COPYRIGHT LICENSE\n\
+  \n\
+  Copyright © 2015, Battelle National Biodefense Institute (BNBI);\n\
+  all rights reserved. Authored by: Brian Ondov, Todd Treangen,\n\
+  Sergey Koren, and Adam Phillippy\n\
+  \n\
+  This Software was prepared for the Department of Homeland Security\n\
+  (DHS) by the Battelle National Biodefense Institute, LLC (BNBI) as\n\
+  part of contract HSHQDC-07-C-00020 to manage and operate the National\n\
+  Biodefense Analysis and Countermeasures Center (NBACC), a Federally\n\
+  Funded Research and Development Center.\n\
 \n";
 #ifdef DIST_LICENSE
 	cout << "\n\
@@ -126,19 +143,21 @@ the Boost and MIT licenses, included below.\n\
 \n";
 
 #endif
+//Copyright © 2015, Battelle National Biodefense Institute (BNBI);\n\
+//all rights reserved. Authored by: Brian Ondov, Todd Treangen,\n\
+//Sergey Koren, and Adam Phillippy\n\
+//\n\
+//This Software was prepared for the Department of Homeland Security\n\
+//(DHS) by the Battelle National Biodefense Institute, LLC (BNBI) as\n\
+//part of contract HSHQDC-07-C-00020 to manage and operate the National\n\
+//Biodefense Analysis and Countermeasures Center (NBACC), a Federally\n\
+//Funded Research and Development Center.\n\
 
 cout << "\n\
 COPYRIGHT LICENSE\n\
 \n\
-Copyright © 2015, Battelle National Biodefense Institute (BNBI);\n\
-all rights reserved. Authored by: Brian Ondov, Todd Treangen,\n\
-Sergey Koren, and Adam Phillippy\n\
-\n\
-This Software was prepared for the Department of Homeland Security\n\
-(DHS) by the Battelle National Biodefense Institute, LLC (BNBI) as\n\
-part of contract HSHQDC-07-C-00020 to manage and operate the National\n\
-Biodefense Analysis and Countermeasures Center (NBACC), a Federally\n\
-Funded Research and Development Center.\n\
+Copyright © 2020, Shandong University (SDU); all rights reserved.\n\
+Authored by Zekun Yin, Xiaoming Xu and Jinxiao Zhang\n\
 \n\
 Redistribution and use in source and binary forms, with or without\n\
 modification, are permitted provided that the following conditions are\n\
