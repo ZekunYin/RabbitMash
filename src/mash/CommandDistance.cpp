@@ -16,10 +16,10 @@
 #include <immintrin.h>
 #else 
 #if defined __AVX2__
-#include <smmintrin.h>
+#include <immintrin.h>
 #else
 #if defined __SSE4_1__
-#include <emmintrin.h>
+#include <nmmintrin.h>
 #else
 
 #endif

@@ -83,6 +83,14 @@ then
 	AC_MSG_NOTICE([simd CPPFLAGS: $CPPFLAGS])
 fi
 
+AC_ARG_ENABLE(avx512, AS_HELP_STRING([--enable-avx512], [enable avx512(default=no)]), [enable_avx512=${enableval}], [enable_avx512=no])
+
+if test "x$enable_avx512" == "xyes"
+then
+	CPPFLAGS="$CPPFLAGS -mavx512f -mavx512bw -mavx512vl -mavx512dq -mavx512cd"
+	AC_MSG_NOTICE([avx2 CPPFLAGS: $CPPFLAGS])
+fi
+
 AC_ARG_ENABLE(avx2, AS_HELP_STRING([--enable-avx2], [enable avx2(default=no)]), [enable_avx2=${enableval}], [enable_avx2=no])
 
 if test "x$enable_avx2" == "xyes"
@@ -96,6 +104,17 @@ AC_ARG_ENABLE(sse4, AS_HELP_STRING([--enable-sse4], [enable sse4(default=no)]), 
 if test "x$enable_sse4" == "xyes"
 then
 	CPPFLAGS="$CPPFLAGS -msse4"
+	AC_MSG_NOTICE([sse CPPFLAGS: $CPPFLAGS])
+fi
+
+AC_ARG_ENABLE(static-cpp, AS_HELP_STRING([--enable-static-cpp], [enable static-cpp(default=no)]), [enable_static_cpp=${enableval}], [enable_static_cpp=no])
+
+if test "x$enable_static_cpp" == "xyes"
+then
+	CPPFLAGS="$CPPFLAGS -static-libstdc++"
+	AC_MSG_NOTICE([sse CPPFLAGS: $CPPFLAGS])
+else
+	CPPFLAGS="$CPPFLAGS -lstdc++"
 	AC_MSG_NOTICE([sse CPPFLAGS: $CPPFLAGS])
 fi
 
