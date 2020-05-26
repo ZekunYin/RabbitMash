@@ -17,17 +17,23 @@ Open Bloom Filter
   https://code.google.com/p/bloom/source/browse/trunk/bloom_filter.hpp
   Common Public License
 
+Mash
+  https://github.com/marbl/Mash
+  COPYRIGHT LICENSE
+  Copyright © 2015, Battelle National Biodefense Institute (BNBI);
+  all rights reserved. Authored by: Brian Ondov, Todd Treangen,
+  Sergey Koren, and Adam Phillippy
+  
+  This Software was prepared for the Department of Homeland Security
+  (DHS) by the Battelle National Biodefense Institute, LLC (BNBI) as
+  part of contract HSHQDC-07-C-00020 to manage and operate the National
+  Biodefense Analysis and Countermeasures Center (NBACC), a Federally
+  Funded Research and Development Center.
+
 COPYRIGHT LICENSE
 
-Copyright © 2015, Battelle National Biodefense Institute (BNBI);
-all rights reserved. Authored by: Brian Ondov, Todd Treangen,
-Sergey Koren, and Adam Phillippy
-
-This Software was prepared for the Department of Homeland Security
-(DHS) by the Battelle National Biodefense Institute, LLC (BNBI) as
-part of contract HSHQDC-07-C-00020 to manage and operate the National
-Biodefense Analysis and Countermeasures Center (NBACC), a Federally
-Funded Research and Development Center.
+Copyright © 2020, Shandong University (SDU); all rights reserved.
+Authored by Zekun Yin, Xiaoming Xu and Jinxiao Zhang
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are
