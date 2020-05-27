@@ -175,6 +175,14 @@ int CommandScreen::run() const
 		queryNames.push_back( arguments[i] );
 	}
 
+	//check file open status
+	for(int i = 0; i < inStreams.size(); i++){
+
+		if(inStreams[i] == NULL){
+			std::cerr << "Can not open " << queryNames[i] << std::endl;
+			exit(1);
+		}
+	}
 	//// open all query files for round robin
 	////
 	//gzFile fps[queryCount];
