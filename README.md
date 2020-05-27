@@ -8,14 +8,30 @@ RabbitMash is an efficient highly optimized implementation of [Mash](https://git
 
 The easiest way to use RabbitMash is to grab a binary release from [here](https://github.com/ZekunYin/RabbitMash/releases). We provide four versions of RabbitMash for different x86_64 architectures including:
 
-| Version      | CPU flags                 |
-| ------------ | ------------------------- |
-| mash_nosimd  | no requirement            |
-| mash_sse4    | sse4_2                    |
-| mash_avx2    | avx2                      |
-| mash_avx512  | avx512f avx512bw avx512vl |
+| Version     | CPU flags                 |
+| ----------- | ------------------------- |
+| mash_nosimd | no requirement            |
+| mash_sse4   | sse4_1                    |
+| mash_avx2   | avx2                      |
+| mash_avx512 | avx512f avx512bw avx512vl |
 
 You can check the CPU Flags by `lscpu` to select corresponding binary.
+
+All binaries have been tested on our server with **Intel Xeon Gold CPUs** running **CentOS 7.5/8.1**.
+
+The binaries should also work on other linuxes. But if you have problem running these binaries, feel free to iussue us.
+
+
+
+## Notes
+
+**Process gzipped files**
+
+RabbitMash supports plain FASTQ/FASTA and gzipped FASTQ/FASTA file formats.  When processing gziped files, the performance of `sketch -i` and `screen` operations are limited by decompression speed. Instead of processing gziped files directly, a more efficient strategy is to process these files by two steps: (i) decompress gziped files to FASTQ format by [libdeflate](https://github.com/ebiggers/libdeflate) or [pugz](https://github.com/Piezoid/pugz), and (ii) process FASTQ/FASTA files by RabbitMash. 
+
+But when you need to sketch large dataset by files, there won't be much performance penalty to process gzipped files.
+
+
 
 ## Build
 
@@ -109,7 +125,7 @@ See Mash's document  ([http://mash.readthedocs.org](http://mash.readthedocs.org)
 **sketch:**
 
 ```bash
--fw #create mutiple msh files to keep low memory footprint for mass sequences.
+-fw #create mutiple msh files to keep low memory footprint for sketching massive sequences.
 ```
 
 **dist:**
