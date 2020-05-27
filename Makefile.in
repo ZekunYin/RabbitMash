@@ -84,6 +84,7 @@ clean :
 	-rm src/mash/capnp/*.o
 	-rm src/mash/capnp/*.c++
 	-rm src/mash/capnp/*.h
+	-rm src/mash/fastx/*.o
 
 .PHONY: test
 test : testSketch testDist testScreen
