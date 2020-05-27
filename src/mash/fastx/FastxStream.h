@@ -16,11 +16,11 @@
 #include "Globals.h"
 
 #include "Buffer.h"
-//#include "zlib/zlib.h" //remove support for compressed files
 #include "FastxChunk.h"
 #include "utils.h"
 #include <iostream>
 #include <string>
+#include <zlib.h> //support gziped files, functional but inefficient
 
 
 #if defined (_WIN32)
@@ -161,13 +161,15 @@ private:
 	bool			eof;
 	bool			usesCrlf;
 	bool			isZipped;
+
 	FILE*           mFile;
+	gzFile          mZipFile;
+
 	uint64 			mHalo;
 
 public:
 	uint64          totalSeqs;
 	uint64			gid = 0;
-	//gzFile          mZipFile;
 
 	//uint64 lastOneReadPos;
 	//uint64 lastTwoReadPos;
@@ -273,45 +275,54 @@ private:
 	static const uint32 SwapBufferSize = 1 << 20; // the longest FASTQ sequence todate is no longer than 1Mbp. 
 
 public:
-	FastqFileReader(const std::string& fileName_)
+	FastqFileReader(const std::string& fileName_, bool isZippedNew = false)
 		:	swapBuffer(SwapBufferSize)
 		,	bufferSize(0)
 		,	eof(false)
 		,	usesCrlf(false)
-		,	isZipped(false)
+		,	isZipped(isZippedNew)
 	{	
 		//if(ends_with(fileName_,".gz")){
-		//	mZipFile = gzopen(fileName_.c_str(),"r");
-		//	isZipped=true;
-		//	gzrewind(mZipFile);
+		if(isZipped){
+			mZipFile = gzopen(fileName_.c_str(),"r");
+		  if(mZipFile == NULL){
+		  	throw DsrcException(("Can not open file to read: " + fileName_).c_str()); //--------------need to change----------//
+		  }
+			//isZipped=true;
+			gzrewind(mZipFile);
 
-		//}else{
-			mFile = FOPEN(fileName_.c_str(), "rb");
-			if(mFile == NULL){
-				throw DsrcException(("Can not open file to read: " + fileName_).c_str()); //--------------need to change----------//
-		//}
+		}else{
+		  mFile = FOPEN(fileName_.c_str(), "rb");
+		  if(mFile == NULL){
+		  	throw DsrcException(("Can not open file to read: " + fileName_).c_str()); //--------------need to change----------//
+		}
 	}
 		
 			
 	}
 
-	FastqFileReader(int fd)
+	FastqFileReader(int fd, bool isZippedNew = false)
 		:	swapBuffer(SwapBufferSize)
 		,	bufferSize(0)
 		,	eof(false)
 		,	usesCrlf(false)
-		,	isZipped(false)
+		,	isZipped(isZippedNew)
 	{	
 		//if(ends_with(fileName_,".gz")){
-		//	mZipFile = gzopen(fileName_.c_str(),"r");
-		//	isZipped=true;
-		//	gzrewind(mZipFile);
+		if(isZipped){
+			mZipFile = gzdopen(fd, "r");
+			//isZipped=true;
+			if(mZipFile == NULL){
+		  		throw DsrcException("Can not open file to read: " ); //--------------need to change----------//
+			}
 
-		//}else{
-			mFile = FDOPEN(fd, "rb");
-			if(mFile == NULL){
-				throw DsrcException("Can not open file to read: " ); //--------------need to change----------//
-		//}
+			gzrewind(mZipFile);
+
+		}else{
+		  mFile = FDOPEN(fd, "rb");
+		  if(mFile == NULL){
+		  	throw DsrcException("Can not open file to read: " ); //--------------need to change----------//
+		}
 	}
 		
 			
@@ -319,11 +330,13 @@ public:
 
 	~FastqFileReader()
 	{
-		//if(mFile != NULL || mZipFile !=NULL)
-		if( mFile != NULL )
+		//if( mFile != NULL )
+		if(mFile != NULL || mZipFile !=NULL)
 			Close();
-		delete mFile;
-		//delete mZipFile;
+		//if(mFile != NULL)
+		//	delete mFile;
+		//if(mZipFile != NULL)
+		//	delete mZipFile;
 	}
 
 	bool Eof() const
@@ -335,28 +348,29 @@ public:
 	bool ReadNextPairedChunk(FastqDataChunk* chunk_);
 	void Close()
 	{
-		if(mFile != NULL)
+		if(mFile != NULL){
 			FCLOSE(mFile);
-		//if(mZipFile !=NULL && isZipped){
-		//	gzclose(mZipFile);
-		//	mZipFile=NULL;
-		//}
+			mFile = NULL;
+		}
+		if(mZipFile !=NULL && isZipped){
+			gzclose(mZipFile);
+			mZipFile=NULL;
+		}
 
-		mFile = NULL;
 	}
 
 	int64 Read(byte* memory_, uint64 size_)
-	{	//if(isZipped){
-		//	int64 n = gzread(mZipFile,memory_,size_);
-		//	if(n == -1)
-		//		cerr<<"Error to read gzip file" <<endl;
-		//	return n;
-		//}
-		//else{
-			int64 n = fread(memory_, 1, size_, mFile) ;
+	{	
+		if(isZipped){
+			int64 n = gzread(mZipFile,memory_,size_);
+			if(n == -1)
+				std::cerr<<"Error to read gzip file" <<std::endl;
 			return n;
-		//}
-		
+		}
+		else{
+		  int64 n = fread(memory_, 1, size_, mFile) ;
+		  return n;
+		}
 		
 	}
 private:
@@ -365,8 +379,8 @@ private:
 	bool			eof;
 	bool			usesCrlf;
 	bool			isZipped;
-	FILE*           mFile;
-	//gzFile          mZipFile;
+	FILE*           mFile = NULL;
+	gzFile          mZipFile = NULL;
 
 	uint64 lastOneReadPos;
 	uint64 lastTwoReadPos;

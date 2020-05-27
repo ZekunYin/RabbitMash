@@ -35,7 +35,7 @@ cd RabbitMash
 ./configure [--prefix=...] [--with-capnp=...] [--with-gsl=...] \
             [--with-simd=yes/no]
 make -j4
-#optimal
+#optional
 make install
 ```
 
@@ -49,7 +49,7 @@ cd RabbitMash
             [--with-simd=yes/no] [--enable-static-gsl=yes]     \
             [--enable-static-cpp=yes]
 make -j4
-#optimal
+#optional
 make install
 ```
 

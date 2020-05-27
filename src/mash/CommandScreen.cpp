@@ -76,6 +76,7 @@ int CommandScreen::run() const
 
 	bool isFQ = false;
 	bool isFA = true;
+	bool isGZ = false;
 
     double pValueMax = options.at("pvalue").getArgumentAsNumber();
     double identityMin = options.at("identity").getArgumentAsNumber();
@@ -306,26 +307,37 @@ int CommandScreen::run() const
 	{
 	
 		isFA = hasSuffix(queryNames[i], ".fa") || hasSuffix(queryNames[i], ".fasta") || hasSuffix(queryNames[i], ".fna");
+		isFA |= hasSuffix(queryNames[i], ".fa.gz") || hasSuffix(queryNames[i], ".fasta.gz") || hasSuffix(queryNames[i], ".fna.gz");
+
 		isFQ = hasSuffix(queryNames[i], ".fq") || hasSuffix(queryNames[i], ".fastq");
+		isFQ |= hasSuffix(queryNames[i], ".fq.gz") || hasSuffix(queryNames[i], ".fastq.gz");
+
+		isGZ = hasSuffix(queryNames[i], ".gz");
+
 		if(!isFA && !isFQ)
 		{
 			cerr <<"Can not recognize suffix of " << queryNames[i] << endl;
 			cerr <<"Please make sure files are end with .fa/.fna/.fasta/.fq/.fastq " << endl << std::flush;
+			cerr <<                 "or .fa.gz/.fna.gz/.fasta.gz/.fq.gz/.fastq.gz " << endl << std::flush;
 			exit(1);
 		}
 
-		if(isFA)
-			cerr << "query file is in FASTA format" << endl;
-		if(isFQ)
-			cerr << "query file is in FASTQ format" << endl;
+		if(isFA && isGZ)
+			cerr << "query file is in gziped FASTA format" << endl;
+		if(isFA && !isGZ)
+			cerr << "query file is in plain FASTA format" << endl;
+		if(isFQ && isGZ)
+			cerr << "query file is in gziped FASTQ format" << endl;
+		if(isFQ && !isGZ)
+			cerr << "query file is in plain FASTQ format" << endl;
 
 		if(isFA){
 			faFileReader = new mash::fa::FastaFileReader(fileno(inStreams[i]), parameters.kmerSize - 1);
-			fastaReader    = new mash::fa::FastaReader(*faFileReader, *fastaPool);
+			fastaReader  = new mash::fa::FastaReader(*faFileReader, *fastaPool);
 		}else if(isFQ){
 			
-			fqFileReader = new mash::fq::FastqFileReader(fileno(inStreams[i]));
-			fastqReader    = new mash::fq::FastqReader(*fqFileReader, *fastqPool);
+			fqFileReader = new mash::fq::FastqFileReader(fileno(inStreams[i]), isGZ);
+			fastqReader  = new mash::fq::FastqReader(*fqFileReader, *fastqPool);
 		}
 		int nChunks = 0;
 		while(true)
