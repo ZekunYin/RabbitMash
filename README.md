@@ -10,10 +10,10 @@ The easiest way to use RabbitMash is to grab a binary release from [here](https:
 
 | Version      | CPU flags                 |
 | ------------ | ------------------------- |
-| rmash_nosimd | no requirement            |
-| rmash_sse4   | sse4_2                    |
-| rmash_avx2   | avx2                      |
-| rmash_avx512 | avx512f avx512bw avx512vl |
+| mash_nosimd  | no requirement            |
+| mash_sse4    | sse4_2                    |
+| mash_avx2    | avx2                      |
+| mash_avx512  | avx512f avx512bw avx512vl |
 
 You can check the CPU Flags by `lscpu` to select corresponding binary.
 
