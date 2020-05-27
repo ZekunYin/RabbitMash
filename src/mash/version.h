@@ -4,4 +4,6 @@
 //
 // See the LICENSE.txt file included with this software for license information.
 
+static const char * rabbitVersion = "0.1";
 static const char * version = "2.2";
+
