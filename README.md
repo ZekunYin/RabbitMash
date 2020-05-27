@@ -6,7 +6,7 @@ RabbitMash is an efficient highly optimized implementation of [Mash](https://git
 
 ## Installation
 
-The easiest way to use RabbitMash is to grab a binary release from [here](https://github.com/ZekunYin/RabbitMash/releases). We provide four versions of RabbitMash for different architectures including:
+The easiest way to use RabbitMash is to grab a binary release from [here](https://github.com/ZekunYin/RabbitMash/releases). We provide four versions of RabbitMash for different x86_64 architectures including:
 
 | Version      | CPU flags                 |
 | ------------ | ------------------------- |
@@ -33,7 +33,7 @@ git clone https://github.com/ZekunYin/RabbitMash.git
 cd RabbitMash
 ./bootstrap.sh
 ./configure [--prefix=...] [--with-capnp=...] [--with-gsl=...] \
-			[--with-simd=yes/no]
+            [--with-simd=yes/no]
 make -j4
 #optimal
 make install
@@ -46,8 +46,8 @@ git clone https://github.com/ZekunYin/RabbitMash.git
 cd RabbitMash
 ./bootstrap.sh
 ./configure [--prefix=...] [--with-capnp=...] [--with-gsl=...] \
-			[--with-simd=yes/no] [--enable-static-gsl=yes]     \
-			[--enable-static-cpp=yes]
+            [--with-simd=yes/no] [--enable-static-gsl=yes]     \
+            [--enable-static-cpp=yes]
 make -j4
 #optimal
 make install
