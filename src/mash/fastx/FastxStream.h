@@ -72,53 +72,66 @@ private:
 	//static const uint32 SwapBufferSize = 1 << 13;
 
 public:
-	FastaFileReader(const std::string& fileName_, uint64 halo = 21)
+	FastaFileReader(const std::string& fileName_, uint64 halo = 21, bool isZippedNew = false)
 		:	swapBuffer(SwapBufferSize)
 		,	bufferSize(0)
 		,	eof(false)
 		,	usesCrlf(false)
 		,	totalSeqs(0)
 		,	mHalo(halo)
-		//,	isZipped(false)
+		,	isZipped(isZippedNew)
 	{	
-		//if(ends_with(fileName_,".gz")){
-		//	mZipFile = gzopen(fileName_.c_str(),"r");
-		//	isZipped=true;
-		//	gzrewind(mZipFile);
+		//if(ends_with(fileName_,".gz"))
+		if(isZipped)
+		{
+			mZipFile = gzopen(fileName_.c_str(),"r");
+			//isZipped=true;
+			gzrewind(mZipFile);
 
-		//}else{
-		mFile = FOPEN(fileName_.c_str(), "rb");
-		std::cerr << "fasta file name: " << fileName_.c_str() << std::endl;
-		if(mFile == NULL){
-			throw DsrcException(("Can not open file to read: " + fileName_).c_str()); //--------------need to change----------//
+		}else{
+			mFile = FOPEN(fileName_.c_str(), "rb");
+			std::cerr << "fasta file name: " << fileName_.c_str() << std::endl;
+			if(mFile == NULL){
+				throw DsrcException(("Can not open file to read: " + fileName_).c_str()); //--------------need to change----------//
+			}
 		}
-		//}
 		
 			
 	}
 
-	FastaFileReader(int fd, uint64 halo = 21)
+	FastaFileReader(int fd, uint64 halo = 21, bool isZippedNew = false)
 		:	swapBuffer(SwapBufferSize)
 		,	bufferSize(0)
 		,	eof(false)
 		,	usesCrlf(false)
 		,	totalSeqs(0)
 		,	mHalo(halo)
+		,	isZipped(isZippedNew)
 	{	
+		if(isZipped)
+		{
+			mZipFile = gzdopen(fd,"r");
+			if(mZipFile == NULL){
+				throw DsrcException("Can not open file to read!"); //--------------need to change----------//
+			}
+			gzrewind(mZipFile);
 
-		mFile = FDOPEN(fd, "rb");
-		if(mFile == NULL){
-			throw DsrcException("Can not open file to read!"); //--------------need to change----------//
+		}else{
+
+			mFile = FDOPEN(fd, "rb");
+			if(mFile == NULL){
+				throw DsrcException("Can not open file to read!"); //--------------need to change----------//
+			}
+		
 		}
-			
 	}
 
 	~FastaFileReader()
 	{
 		//std::cerr << "totalSeqs: " << this->totalSeqs << std::endl;
-		if(mFile != NULL)
+		if(mFile != NULL || mZipFile != NULL)
 			Close();
-		delete mFile;
+		//delete mFile;
 		//delete mZipFile;
 	}
 
@@ -131,30 +144,32 @@ public:
 
 	void Close()
 	{
-		if(mFile != NULL)
+		if(mFile != NULL){
 			FCLOSE(mFile);
-		//if(mZipFile !=NULL && isZipped){
-		//	gzclose(mZipFile);
-		//	mZipFile=NULL;
-		//}
+			mFile = NULL;
+		}
 
-		mFile = NULL;
+		if(mZipFile !=NULL && isZipped){
+			gzclose(mZipFile);
+			mZipFile=NULL;
+		}
+
 	}
 
 	int64 Read(byte* memory_, uint64 size_)
-	{	//if(isZipped){
-		//	int64 n = gzread(mZipFile,memory_,size_);
-		//	if(n == -1)
-		//		cerr<<"Error to read gzip file" <<endl;
-		//	return n;
-		//}
-		//else{
-		int64 n = fread(memory_, 1, size_, mFile) ;
-		return n;
-		//}
-		
-		
+	{	
+		if(isZipped){
+			int64 n = gzread(mZipFile,memory_,size_);
+			if(n == -1)
+				std::cerr << "Error to read gzip file" << std::endl;
+			return n;
+		}
+		else{
+			int64 n = fread(memory_, 1, size_, mFile) ;
+			return n;
+		}
 	}
+
 private:
 	core::Buffer	swapBuffer;
 	uint64			bufferSize;
@@ -162,8 +177,8 @@ private:
 	bool			usesCrlf;
 	bool			isZipped;
 
-	FILE*           mFile;
-	gzFile          mZipFile;
+	FILE*           mFile = NULL;
+	gzFile          mZipFile = NULL;
 
 	uint64 			mHalo;
 
@@ -282,7 +297,7 @@ public:
 		,	usesCrlf(false)
 		,	isZipped(isZippedNew)
 	{	
-		//if(ends_with(fileName_,".gz")){
+		//if(ends_with(fileName_,".gz"))
 		if(isZipped){
 			mZipFile = gzopen(fileName_.c_str(),"r");
 		  if(mZipFile == NULL){
@@ -308,7 +323,7 @@ public:
 		,	usesCrlf(false)
 		,	isZipped(isZippedNew)
 	{	
-		//if(ends_with(fileName_,".gz")){
+		//if(ends_with(fileName_,".gz"))
 		if(isZipped){
 			mZipFile = gzdopen(fd, "r");
 			//isZipped=true;

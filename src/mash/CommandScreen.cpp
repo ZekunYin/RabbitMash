@@ -332,7 +332,7 @@ int CommandScreen::run() const
 			cerr << "query file is in plain FASTQ format" << endl;
 
 		if(isFA){
-			faFileReader = new mash::fa::FastaFileReader(fileno(inStreams[i]), parameters.kmerSize - 1);
+			faFileReader = new mash::fa::FastaFileReader(fileno(inStreams[i]), parameters.kmerSize - 1, isGZ);
 			fastaReader  = new mash::fa::FastaReader(*faFileReader, *fastaPool);
 		}else if(isFQ){
 			
