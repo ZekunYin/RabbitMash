@@ -92,11 +92,13 @@ namespace mash {
         //bool log = options.at("log").active;
         double pValueMax = options.at("pvalue").getArgumentAsNumber();
         double distanceMax = options.at("distance").getArgumentAsNumber();
+		bool binOut = true;
 
 		string oFileName = options.at("binOutput").argument;
 
-		if (oFileName == "") oFileName = "output.bin";
-		cerr << "Results will be written to " << oFileName << endl;
+		if (oFileName == "") binOut = false;
+		if(binOut)
+			cerr << "Results will be written to " << oFileName << endl;
 
         Sketch::Parameters parameters;
 
@@ -117,11 +119,17 @@ namespace mash {
         const string & fileReference = arguments[0];
 
 		//string oFileName = "/home/ssd/dist_output.bin";
-		ofstream oFile(oFileName, ios::out | ios::binary | ios::trunc);
-		if(!oFile.is_open()){
-			cerr << "Cann't open output file: " << oFileName << endl;
-			exit(1);
+		
+		ofstream oFile;
+		if(binOut)
+		{
+			oFile.open(oFileName, ios::out | ios::binary | ios::trunc);
+			if(!oFile.is_open()){
+				cerr << "Cann't open output file: " << oFileName << endl;
+				exit(1);
+			}
 		}
+
         bool isSketch = hasSuffix(fileReference, suffixSketch);
 
         if ( isSketch )
@@ -275,13 +283,19 @@ namespace mash {
 
             while ( threadPool.outputAvailable() )
             {
-                writeOutput(threadPool.popOutputWhenAvailable(), table, comment, oFile);
+				if(binOut)
+                	writeOutput(threadPool.popOutputWhenAvailable(), table, comment, oFile);
+				else
+                	writeOutput(threadPool.popOutputWhenAvailable(), table, comment);
             }
         }
 
         while ( threadPool.running() )
         {
-            writeOutput(threadPool.popOutputWhenAvailable(), table, comment, oFile);
+			if(binOut)
+            	writeOutput(threadPool.popOutputWhenAvailable(), table, comment, oFile);
+			else
+            	writeOutput(threadPool.popOutputWhenAvailable(), table, comment);
         }
 
         if ( warningCount > 0 && ! parameters.reads )
@@ -289,7 +303,7 @@ namespace mash {
             warnKmerSize(parameters, *this, lengthMax, lengthMaxName, randomChance, kMin, warningCount);
         }
 
-		oFile.close();
+		if(binOut) oFile.close();
         return 0;
     }
 
@@ -313,15 +327,16 @@ namespace mash {
 
                 if ( pair->pass )
                 {
-					buffer[k].queryID = i;
 					buffer[k].refID = j;
+					buffer[k].queryID = i;
 					buffer[k].distance = pair->distance;
                 }
+				j++;
             }
             else if ( pair->pass )
             {
-				buffer[k].queryID = i;
 				buffer[k].refID = j;
+				buffer[k].queryID = i;
 				buffer[k].distance = pair->distance;
 				buffer[k].pValue = pair->pValue;
 				buffer[k].number = pair->numer;
@@ -329,7 +344,15 @@ namespace mash {
 
             	j++;
 			}
+
+			if(j == output->sketchRef.getReferenceCount() )
+			{
+				j = 0;
+				i++;
+			}
+				
         }
+
 	
 		oFile.write((char*)buffer, k * sizeof(Result));
 		oFile.flush();
@@ -367,6 +390,64 @@ namespace mash {
         return output;
     }
 
+	void CommandDistance::writeOutput(CompareOutput * output, bool table, bool comment) const
+	{
+	    uint64_t i = output->indexQuery;
+	    uint64_t j = output->indexRef;
+	    
+	    for ( uint64_t k = 0; k < output->pairCount && i < output->sketchQuery.getReferenceCount(); k++ )
+	    {
+	        const CompareOutput::PairOutput * pair = &output->pairs[k];
+	        
+	        if ( table && j == 0 )
+	        {
+	            cout << output->sketchQuery.getReference(i).name;
+	        }
+	        
+	        if ( table )
+	        {
+	            cout << '\t';
+	    
+	            if ( pair->pass )
+	            {
+	                cout << pair->distance;
+	            }
+	        }
+	        else if ( pair->pass )
+	        {
+	            cout << output->sketchRef.getReference(j).name;
+	            
+	            if ( comment )
+	            {
+	                cout << ':' << output->sketchRef.getReference(j).comment;
+	            }
+	            
+	            cout << '\t' << output->sketchQuery.getReference(i).name;
+	            
+	            if ( comment )
+	            {
+	                cout << ':' << output->sketchQuery.getReference(i).comment;
+	            }
+	            
+	            cout << '\t' << pair->distance << '\t' << pair->pValue << '\t' << pair->numer << '/' << pair->denom << endl;
+	        }
+	    
+	        j++;
+	        
+	        if ( j == output->sketchRef.getReferenceCount() )
+	        {
+	            if ( table )
+	            {
+	                cout << endl;
+	            }
+	            
+	            j = 0;
+	            i++;
+	        }
+	    }
+	    
+	    delete output;
+	}
     void compareSketches(CommandDistance::CompareOutput::PairOutput * output, const Sketch::Reference & refRef, const Sketch::Reference & refQry, uint64_t sketchSize, int kmerSize, double kmerSpace, double maxDistance, double maxPValue)
     {
         uint64_t i = 0;

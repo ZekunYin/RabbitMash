@@ -32,6 +32,7 @@ SOURCES=\
 	src/mash/Sketch.cpp \
 	src/mash/sketchParameterSetup.cpp \
 	src/mash/CommandOutputbin.cpp \
+	src/mash/CommandDumpdist.cpp \
 	src/mash/fastx/FastxIO.cpp \
 	src/mash/fastx/FastxStream.cpp \
 

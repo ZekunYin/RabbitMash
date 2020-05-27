@@ -18,10 +18,10 @@ class CommandDistance : public Command
 public:
 
    	struct Result{
-		int queryID;
 		int refID;
-		float distance;
-		float pValue;
+		int queryID;
+		double distance;
+		double pValue;
 		int number = 0;
 		int denom = 0;
 	};
