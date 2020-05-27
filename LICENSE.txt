@@ -1,9 +1,12 @@
 PURPOSE
 
-Mash is a fast sequence distance estimator that uses the MinHash
-algorithm and is designed to work with genomes and metagenomes in the
-form of assemblies or reads. It is implemented in C++ and is
-distributed with:
+RabbitMash is an efficient highly optimized implementation of Mash 
+which can take full advantage of modern hardware including 
+multi-threading, vectorization, and fast I/O. RabbitMash is a fast 
+sequence distance estimator that uses the MinHash algorithm and is 
+designed to work with genomes and metagenomes in the form of 
+assemblies or reads. It is implemented in C++ and is distributed 
+with:
 
 KSeq
   lh3lh3.users.sourceforge.net/kseq.shtml
