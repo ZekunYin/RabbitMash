@@ -39,7 +39,8 @@ CommandTriangle::CommandTriangle()
     addOption("edge", Option(Option::Boolean, "E", "Output", "Output edge list instead of Phylip matrix, with fields [seq1, seq2, dist, p-val, shared-hashes].", ""));
     addOption("pvalue", Option(Option::Number, "v", "Output", "Maximum p-value to report in edge list. Implies -" + getOption("edge").identifier + ".", "1.0", 0., 1.));
     addOption("distance", Option(Option::Number, "d", "Output", "Maximum distance to report in edge list. Implies -" + getOption("edge").identifier + ".", "1.0", 0., 1.));
-	addOption("outBin", Option(Option::String, "o", "Output", "output to the binary format with a higher speed.", "./rabbit-mash-output.bin"));
+	addOption("outBin", Option(Option::String, "o", "Output", "output results to binary phylip format for better performance. If -o is not specified, results will be redirected to stdout. This will be slow.", ""));
+	//addOption("outBin", Option(Option::String, "o", "Output", "output to the binary format with a higher speed.", "./rabbit-mash-output.bin"));
     //addOption("log", Option(Option::Boolean, "L", "Output", "Log scale distances and divide by k-mer size to provide a better analog to phylogenetic distance. The special case of zero shared min-hashes will result in a distance of 1.", ""));
     useSketchOptions();
 }
@@ -60,7 +61,7 @@ int CommandTriangle::run() const
     double pValueMax = options.at("pvalue").getArgumentAsNumber();
     double distanceMax = options.at("distance").getArgumentAsNumber();
     double pValuePeakToSet = 0;
-	//bool outBin = options.at("outBin").active;
+	bool outBin; 
 
 	//addbyxxm: test the option of string about bool return.
 	//if(options.at("outBin").active){
@@ -70,28 +71,38 @@ int CommandTriangle::run() const
 	//	cerr << "the option of -o is true." << endl;
 	//return 1;	
    
-   	//if(outBin){
    	string ofile = options.at("outBin").argument;
 
-	cerr << "writing result to " << ofile << endl;
+	string nameFile;
+	string distFile;
+	fstream output1;
+	fstream output2;
 
-	string nameFile = ofile + "Name.bin";
-	string distFile = ofile + "Dist.bin";
+	if(ofile != ""){
 
-	//fstream output(ofile, output.binary | output.out);
-	fstream output1(nameFile, output1.binary | output1.out);
-	fstream output2(distFile, output2.binary | output2.out);
-	
-	if(!output1.is_open()){
-		cerr << "fail to open " << nameFile << endl;
-		return 0;
+		outBin = true;
+
+		cerr << "writing result to " << ofile << endl;
+
+		nameFile = ofile + "Name.bin";
+		distFile = ofile + "Dist.bin";
+
+		//fstream output(ofile, output.binary | output.out);
+		output1.open(nameFile, output1.binary | output1.out);
+		output2.open(distFile, output2.binary | output2.out);
+		
+		if(!output1.is_open()){
+			cerr << "fail to open " << nameFile << endl;
+			return 0;
+		}
+
+		if(!output2.is_open()){
+			cerr << "fail to open " << distFile << endl;
+			return 0;
+		}
+	}else{
+		outBin = false;
 	}
-
-	if(!output2.is_open()){
-		cerr << "fail to open " << distFile << endl;
-		return 0;
-	}
-	//}
 
 	
 
@@ -168,8 +179,13 @@ int CommandTriangle::run() const
     ThreadPool<TriangleInput, TriangleOutput> threadPool(compare, threads);
    
    	int nameLength = 20;
-   	char * output1Buffer = new char[nameLength];
-   	double * output2Buffer = new double[sketch.getReferenceCount()];
+   	char * output1Buffer;
+   	double * output2Buffer;
+
+	if(outBin){
+   		output1Buffer = new char[nameLength];
+   		output2Buffer = new double[sketch.getReferenceCount()];
+	}
 	//add the first seq into the outputResult.
 	//string name0 = sketch.getReference(0).name;
 	//output1Buffer = &name0[0];
@@ -186,25 +202,25 @@ int CommandTriangle::run() const
         
         while ( threadPool.outputAvailable() )
         {
-		//	if(outBin){	
+			if(outBin){	
             	writeOutput(threadPool.popOutputWhenAvailable(), comment, edge, pValuePeakToSet, output1Buffer, output1, output2Buffer, output2);
-		//	}
-		//	else{
-        //    	writeOutput(threadPool.popOutputWhenAvailable(), comment, edge, pValuePeakToSet);
-		//	}
+			}
+			else{
+            	writeOutput(threadPool.popOutputWhenAvailable(), comment, edge, pValuePeakToSet);
+			}
 
         }
     }
     
     while ( threadPool.running() )
     {
-	//	if(outBin){
+		if(outBin){
             writeOutput(threadPool.popOutputWhenAvailable(), comment, edge, pValuePeakToSet, output1Buffer, output1, output2Buffer, output2);
         //	writeOutput(threadPool.popOutputWhenAvailable(), comment, edge, pValuePeakToSet, outputBuffer, output);
-	//	}
-	//	else{
-    //    	writeOutput(threadPool.popOutputWhenAvailable(), comment, edge, pValuePeakToSet);
-	//	}	
+		}
+		else{
+        	writeOutput(threadPool.popOutputWhenAvailable(), comment, edge, pValuePeakToSet);
+		}	
 
 
     }
@@ -218,13 +234,14 @@ int CommandTriangle::run() const
     {
     	warnKmerSize(parameters, *this, lengthMax, lengthMaxName, randomChance, kMin, warningCount);
     }
-   
-   	delete output1Buffer;
-   	delete output2Buffer;
 
-	output1.close();	
-	output2.close();	
-
+  	if(outBin){ 
+   		delete output1Buffer;
+   		delete output2Buffer;
+	
+		output1.close();	
+		output2.close();	
+	}
     return 0;
 }
 

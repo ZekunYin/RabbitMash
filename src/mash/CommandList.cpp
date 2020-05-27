@@ -41,8 +41,8 @@ void CommandList::print()
 	
     vector<vector<string>> columns(1);
     
-    cout << endl << "RabbiitMash version " << rabbitVersion 
-	     << "(based on Mash version " << version << ")"  << endl << endl;
+    cout << endl << "RabbiitMash version " << version 
+	     << " (based on Mash version " << mashVersion << ")"  << endl << endl;
     
     cout << "Type 'mash --license' for license and copyright information." << endl;
     
