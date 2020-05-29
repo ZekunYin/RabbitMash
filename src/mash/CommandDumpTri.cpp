@@ -1,7 +1,7 @@
 //output the bin file in text formatting.
 //addbyxxm
 
-#include "CommandOutputbin.h"
+#include "CommandDumpTri.h"
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -12,9 +12,9 @@ using namespace::std;
 
 namespace mash{
 
-CommandOutputbin::CommandOutputbin() : Command()
+CommandDumpTri::CommandDumpTri() : Command()
 {
-	name = "outputbin";
+	name = "dumpTri";
 	summary = "output the bin file in text formatting.";
 	description = "in the last step of the \" triangle \" we get two binary out file name.bin and dist.bin but both of them are unreadable. The outputbin is used to output the bin file in text formatting.";
 	argumentString = "<name.bin> <dist.bin>";
@@ -23,7 +23,7 @@ CommandOutputbin::CommandOutputbin() : Command()
 	//addOption -o outputfile.
 }
 
-int CommandOutputbin::run() const
+int CommandDumpTri::run() const
 {
 	if(arguments.size() < 2 || options.at("help").active)
 	{

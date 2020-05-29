@@ -1,16 +1,16 @@
 //output the binfile in text formatting.
 
-#ifndef INCLUDED_CommandOutputbin
-#define INCLUDED_CommandOutputbin
+#ifndef INCLUDED_CommandDumpTri
+#define INCLUDED_CommandDumpTri
 
 #include "Command.h"
 
 namespace mash{
 
-class CommandOutputbin : public Command
+class CommandDumpTri : public Command
 {
 public:
-	CommandOutputbin();
+	CommandDumpTri();
 	int run() const; // override?
 	
 private:
