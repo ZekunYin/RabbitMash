@@ -14,9 +14,9 @@ namespace mash{
 
 CommandDumpTri::CommandDumpTri() : Command()
 {
-	name = "dumpTri";
-	summary = "output the bin file in text formatting.";
-	description = "in the last step of the \" triangle \" we get two binary out file name.bin and dist.bin but both of them are unreadable. The outputbin is used to output the bin file in text formatting.";
+	name = "dumptri";
+	summary = "Convert binary triangle results to human-readable texts.";
+	description = "Convert binary results produced by \"triangle\" operation to human-readable texts using multiple threads.";
 	argumentString = "<name.bin> <dist.bin>";
 	
 	useOption("help");

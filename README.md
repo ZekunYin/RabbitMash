@@ -147,11 +147,11 @@ See Mash's document  ([http://mash.readthedocs.org](http://mash.readthedocs.org)
 #### New Command
 
 ```bash
-mash dumpdist #Create binary dist results to human-readable texts.
+mash dumpdist #Convert binary dist results to human-readable texts.
 ```
 
 ```bash
-mash dumptri  #Create binary triangle results to human-readable texts.
+mash dumptri  #Convert binary triangle results to human-readable texts.
 ```
 
 

@@ -36,15 +36,16 @@ namespace mash{
 CommandDumpdist::CommandDumpdist() : Command()
 {
 	name = "dumpdist";
-	summary = "convert binary dist results to text format and print results to stdout";
-	description = "convert binary dist results to text format.";
+	summary = "Convert binary dist results to human-readable texts.";
+	description = "Convert binary results produced by \"dist\" operation to human-readable texts using multiple threads.";
 	argumentString = "<reference.msh> <query.msh> <dist.bin>";
 	
-	addOption("output", Option(Option::String, "o", "Output", "output file", ""));
+    addOption("table", Option(Option::Boolean, "t", "Output", "Table output (will not report p-values, but fields will be blank if they do not meet the p-value threshold).", ""));
+    addOption("comment", Option(Option::Boolean, "C", "Output", "Show comment fields with reference/query names (denoted with ':').", "1.0", 0., 1.));
+	addOption("output", Option(Option::String, "o", "Output", "output human-readable text file", ""));
 
 	useOption("threads");
 	useOption("help");
-	//addOption -o outputfile.
 }
 
 int CommandDumpdist::run() const
@@ -59,6 +60,9 @@ int CommandDumpdist::run() const
 	string queryMsh = arguments[1];
 	string fileName = arguments[2];
 	string oFileName = options.at("output").argument;
+
+    bool table = options.at("table").active;
+    bool comment = options.at("comment").active;
 
 	if(oFileName == "") oFileName = fileName + ".dist";
 	FILE * fout = fopen(oFileName.c_str(), "wb");
@@ -128,14 +132,33 @@ int CommandDumpdist::run() const
 		    // << buffer[j].number << "/" << buffer[j].denom << endl;
 
 			//oFile.write(tmp.str().c_str(), tmp.str().size());
-			string tmp =
-  	    	       refSketch.getReference(buffer[j].refID).name + "\t" 
-				 + querySketch.getReference(buffer[j].queryID).name + "\t" 
-				 + to_string(buffer[j].distance) + "\t" 
-				 + to_string(buffer[j].pValue  ) + "\t"
-			     + to_string(buffer[j].number  ) + "/" 
-				 + to_string(buffer[j].denom   ) + "\n";// endl;
-			oFile.write(tmp.c_str(), tmp.size());
+			if( table && buffer[j].refID == 0 ){
+				string tmp = querySketch.getReference(buffer[j].queryID).name;
+				if(tmp == "")
+					cerr << "WARNING: emptry string name. refID: " << buffer[j].refID 
+					     << " queryID: " << buffer[j].queryID << endl;
+				oFile.write(tmp.c_str(), tmp.size());
+			}
+			if( table ) 
+			{
+				string tmp = '\t' + to_string(buffer[j].distance);
+				if( buffer[j].refID == (refSketch.getReferenceCount() - 1) ) 
+					tmp += '\n';
+				oFile.write(tmp.c_str(), tmp.size());
+			} else {
+
+				string tmp =
+  	    		       refSketch.getReference(buffer[j].refID).name;
+				if( comment ) tmp += ':' + refSketch.getReference(buffer[j].refID).comment;
+				tmp += '\t' + querySketch.getReference(buffer[j].queryID).name;
+				if( comment ) tmp += ':' + querySketch.getReference(buffer[j].queryID).comment;
+				tmp += '\t' 
+					+ to_string(buffer[j].distance) + '\t' 
+					+ to_string(buffer[j].pValue  ) + '\t'
+				    + to_string(buffer[j].number  ) + '/'
+					+ to_string(buffer[j].denom   ) + '\n';// endl;
+				oFile.write(tmp.c_str(), tmp.size());
+			}
 		}
 		oFile.close();
 	}
@@ -154,6 +177,20 @@ int CommandDumpdist::run() const
 
 	//combine and remove tmp files
 	double t1 = get_sec();
+
+    if ( table )
+    {
+        string tmp =  "#query";
+
+        for ( int i = 0; i < refSketch.getReferenceCount(); i++ )
+        {
+            tmp += '\t' + refSketch.getReference(i).name;
+        }
+		
+		tmp += '\n';
+		
+		fwrite(tmp.c_str(), 1, tmp.size(), fout);
+    }
 
 	int tmpSize = 1<<20;
 	unsigned char *tmpBuffer = new unsigned char[tmpSize];
