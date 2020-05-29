@@ -490,7 +490,7 @@ bool Sketch::sketchFileByChunk(FILE * file, ThreadPool<Sketch::SketchInput, Sket
 	//gzFile fp = gzdopen(fileno(file), "r");
 	//kseq_t *seq = kseq_init(fp);
 	
-	mash::fa::FastaDataPool *fastaPool    = new mash::fa::FastaDataPool(64, 1<<20);
+	mash::fa::FastaDataPool *fastaPool    = new mash::fa::FastaDataPool(parameters.parallelism, 1<<20);
 	mash::fa::FastaFileReader *fileReader = new mash::fa::FastaFileReader(fileno(file), parameters.kmerSize - 1, true);
 	mash::fa::FastaReader *fastaReader    = new mash::fa::FastaReader(*fileReader, *fastaPool);
     int l;
