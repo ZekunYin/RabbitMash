@@ -48,9 +48,10 @@ int CommandSketch::run() const
 		//TODO: implement by avx2
 #else
 #if defined __SSE4_1__
-		cerr << "Using SSE4 instructions" << endl;
-		cerr << "Not implemented yet! Please use:" << endl;
-		cerr << "./configure --disable-simd" << endl;
+		//cerr << "Using SSE4 instructions" << endl;
+		//cerr << "Not implemented yet! Please use:" << endl;
+		//cerr << "./configure --disable-simd" << endl;
+		cerr << "No SIMD instructions used" << endl;
 		//TODO:implement by sse
 #else
 		cerr << "No SIMD instructions used" << endl;

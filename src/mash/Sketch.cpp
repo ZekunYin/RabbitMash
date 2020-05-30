@@ -1089,9 +1089,9 @@ void addMinHashes(MinHashHeap & minHashHeap, const char * seq, uint64_t length, 
 	}
 
 	#else
-		#if defined __SSE4_1__
-			//implement by sse
-		#else
+//		#if defined __SSE4_1__
+//			//implement by sse
+//		#else
 
 //implement by no optmization
 //--------------------------------------------------------------------------------------------------------------------
@@ -1131,7 +1131,7 @@ void addMinHashes(MinHashHeap & minHashHeap, const char * seq, uint64_t length, 
         
 		minHashHeap.tryInsert(hash);
     }
-		#endif
+//		#endif
 	#endif
 #endif
     
