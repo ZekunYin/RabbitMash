@@ -93,26 +93,30 @@ If you are not a root user, you can build the dependecies from source code.
 **dist:**
 
 ```bash
- ./mash dist test/genome1.fna.msh test/genome2.fna.msh
+ ./mash dist test/genome1.fna.msh test/genome2.fna.msh -o dist.bin
+ #optional
+ ./mash dumpdist test/genome1.fna.msh test/genome2.fna.msh dist.bin -o dist.txt
 ```
 
 **triangle:**
 
 ```bash
-./mash triangle test/genome1.fna.msh
+./mash triangle test/genome1.fna.msh -o tri.bin
+#optional
+./mash dumptri test/genome1.fna.msh tri.bin -o tri.txt
 ```
 
 **screen:**
 
 ```bash
-./mash screen test/genome1.fna.msh test/reads1.fastq
+./mash screen test/genome1.fna.msh test/reads1.fastq > scr.out
 ```
 
 
 
 ## Document
 
-RabbitMash is based on [Mash](https://github.com/marbl/Mash) . All functions and most parameters of RabbitMash is the same with Mash. 
+RabbitMash is based on [Mash](https://github.com/marbl/Mash) . All functions and most parameters of RabbitMash is the same with Mash.  Just type `mash` for command information and type `mash <command_name>` for help information.
 
 See Mash's document  ([http://mash.readthedocs.org](http://mash.readthedocs.org)) for more information.
 
@@ -125,25 +129,29 @@ See Mash's document  ([http://mash.readthedocs.org](http://mash.readthedocs.org)
 **sketch:**
 
 ```bash
--fw #create mutiple msh files to keep low memory footprint for sketching massive sequences.
+-fw #Create mutiple msh files to keep low memory footprint for sketching massive sequences.
 ```
 
 **dist:**
 
 ```bash
--o #output file name in binary format for better performance
+-o <text> #Create binary format result file for better performance. If -o is not specified, text results will be written to stdout.
 ```
 
 **triangle:**
 
 ```bash
--o #output to the binary phylip format for better performance.
+-o <text> #Create binary format result file for better performance. If -o is not specified, text results will be written to stdout.
 ```
 
 #### New Command
 
 ```bash
-outputBin: dump binary phylip format to phylip format
+mash dumpdist #Convert binary dist results to human-readable texts.
+```
+
+```bash
+mash dumptri  #Convert binary triangle results to human-readable texts.
 ```
 
 
