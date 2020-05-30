@@ -64,6 +64,16 @@ int CommandDumpdist::run() const
     bool table = options.at("table").active;
     bool comment = options.at("comment").active;
 
+	if(!hasSuffix(refMsh, ".msh")){
+		cerr << refMsh << " is not msh format, please provide correct input" << endl;
+		exit(1);
+	}
+
+	if(!hasSuffix(queryMsh, ".msh")){
+		cerr << queryMsh << " is not msh format, please provide correct input" << endl;
+		exit(1);
+	}
+
 	if(oFileName == "") oFileName = fileName + ".dist";
 	FILE * fout = fopen(oFileName.c_str(), "wb");
 
