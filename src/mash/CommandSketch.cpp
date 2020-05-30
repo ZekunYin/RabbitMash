@@ -35,6 +35,7 @@ CommandSketch::CommandSketch()
     addOption("prefix", Option(Option::File, "o", "Output", "Output prefix (first input file used if unspecified). The suffix '.msh' will be appended.", ""));
     addOption("id", Option(Option::File, "I", "Sketch", "ID field for sketch of reads (instead of first sequence ID).", ""));
     addOption("comment", Option(Option::File, "C", "Sketch", "Comment for a sketch of reads (instead of first sequence comment).", ""));
+	addOption("freeMemory", Option(Option::Boolean, "fw", "Output", "free the memory by writeToCpanp to several subfiles intermediately.", ""));
     useSketchOptions();
 }
 
@@ -75,7 +76,10 @@ int CommandSketch::run() const
     {
     	return 1;
     }
-    
+   
+   	if(getOption("freeMemory").active)
+		parameters.freeMemory = true;
+
     for ( int i = 0; i < arguments.size(); i++ )
     {
         if ( false && hasSuffix(arguments[i], suffixSketch) )
