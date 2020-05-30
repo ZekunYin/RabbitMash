@@ -66,45 +66,55 @@ int CommandTriangle::run() const
 	//addbyxxm: test the option of string about bool return.
 	//if(options.at("outBin").active){
 	//	cerr << "the option of -o is true." << endl;
-	//}
+//}
 	//else 
 	//	cerr << "the option of -o is true." << endl;
 	//return 1;	
    
-   	string ofile = options.at("outBin").argument;
+   	string oFileName = options.at("outBin").argument;
 
-	string nameFile;
-	string distFile;
-	fstream output1;
-	fstream output2;
+//	string nameFile;
+//	string distFile;
+//	fstream output1;
+//	fstream output2;
 
-	if(ofile != ""){
+	if(oFileName != ""){
 
 		outBin = true;
 
-		cerr << "writing result to " << ofile << endl;
+		cerr << "writing result to " << oFileName << endl;
 
-		nameFile = ofile + "Name.bin";
-		distFile = ofile + "Dist.bin";
+//		nameFile = ofile + "Name.bin";
+//		distFile = ofile + "Dist.bin";
 
 		//fstream output(ofile, output.binary | output.out);
-		output1.open(nameFile, output1.binary | output1.out);
-		output2.open(distFile, output2.binary | output2.out);
+//		output1.open(nameFile, output1.binary | output1.out);
+//		output2.open(distFile, output2.binary | output2.out);
 		
-		if(!output1.is_open()){
-			cerr << "fail to open " << nameFile << endl;
-			return 0;
-		}
-
-		if(!output2.is_open()){
-			cerr << "fail to open " << distFile << endl;
-			return 0;
-		}
+//		if(!output1.is_open()){
+//			cerr << "fail to open " << nameFile << endl;
+//			return 0;
+//		}
+//
+//		if(!output2.is_open()){
+//			cerr << "fail to open " << distFile << endl;
+//			return 0;
+//		}
 	}else{
 		outBin = false;
 	}
 
 	
+	ofstream oFile;
+	if(outBin)
+	{
+		oFile.open(oFileName, ios::out | ios::binary | ios::trunc);
+		if(!oFile.is_open()){
+			cerr << "Can't opene output file: " << oFileName << endl;
+			exit(1);
+		}
+	}
+		
 
 
 
@@ -178,14 +188,14 @@ int CommandTriangle::run() const
     
     ThreadPool<TriangleInput, TriangleOutput> threadPool(compare, threads);
    
-   	int nameLength = 20;
-   	char * output1Buffer;
-   	double * output2Buffer;
-
-	if(outBin){
-   		output1Buffer = new char[nameLength];
-   		output2Buffer = new double[sketch.getReferenceCount()];
-	}
+//   	int nameLength = 20;
+//   	char * output1Buffer;
+//   	double * output2Buffer;
+//
+//	if(outBin){
+//   		output1Buffer = new char[nameLength];
+//   		output2Buffer = new double[sketch.getReferenceCount()];
+//	}
 	//add the first seq into the outputResult.
 	//string name0 = sketch.getReference(0).name;
 	//output1Buffer = &name0[0];
@@ -203,7 +213,8 @@ int CommandTriangle::run() const
         while ( threadPool.outputAvailable() )
         {
 			if(outBin){	
-            	writeOutput(threadPool.popOutputWhenAvailable(), comment, edge, pValuePeakToSet, output1Buffer, output1, output2Buffer, output2);
+            	writeOutput(threadPool.popOutputWhenAvailable(), comment, edge, pValuePeakToSet, oFile);
+            	//writeOutput(threadPool.popOutputWhenAvailable(), comment, edge, pValuePeakToSet, output1Buffer, output1, output2Buffer, output2);
 			}
 			else{
             	writeOutput(threadPool.popOutputWhenAvailable(), comment, edge, pValuePeakToSet);
@@ -215,8 +226,8 @@ int CommandTriangle::run() const
     while ( threadPool.running() )
     {
 		if(outBin){
-            writeOutput(threadPool.popOutputWhenAvailable(), comment, edge, pValuePeakToSet, output1Buffer, output1, output2Buffer, output2);
-        //	writeOutput(threadPool.popOutputWhenAvailable(), comment, edge, pValuePeakToSet, outputBuffer, output);
+        	writeOutput(threadPool.popOutputWhenAvailable(), comment, edge, pValuePeakToSet, oFile);
+            //writeOutput(threadPool.popOutputWhenAvailable(), comment, edge, pValuePeakToSet, output1Buffer, output1, output2Buffer, output2);
 		}
 		else{
         	writeOutput(threadPool.popOutputWhenAvailable(), comment, edge, pValuePeakToSet);
@@ -236,25 +247,101 @@ int CommandTriangle::run() const
     }
 
   	if(outBin){ 
-   		delete output1Buffer;
-   		delete output2Buffer;
+//   		delete output1Buffer;
+//   		delete output2Buffer;
 	
-		output1.close();	
-		output2.close();	
+//		output1.close();	
+//		output2.close();	
 	}
     return 0;
 }
 
-void CommandTriangle::writeOutput(TriangleOutput * output, bool comment, bool edge, double & pValuePeakToSet, char * output1Buffer, fstream &output1File, double * output2Buffer, fstream & output2File) const
+//void CommandTriangle::writeOutput(TriangleOutput * output, bool comment, bool edge, double & pValuePeakToSet, char * output1Buffer, fstream &output1File, double * output2Buffer, fstream & output2File) const
+//{
+//    const Sketch & sketch = output->sketch;
+//    const Sketch::Reference & ref = sketch.getReference(output->index);
+//
+//	string name_ = ref.name;
+//	//cout << name_ << "===addbyxxm" <<endl;
+//	//exit(0);
+//	output1Buffer = &(name_[0]);
+//	output1File.write(reinterpret_cast<char*>(output1Buffer), (20) * sizeof(char));
+//
+//    
+//    //if ( !edge )
+//    //{
+//    //    cout << (comment ? ref.comment : ref.name);
+//    //}
+//    
+//	double distCount = 0.0;
+//	int j = 0;
+//    for ( uint64_t i = 0; i < output->index; i++ )
+//    {
+//        const CommandDistance::CompareOutput::PairOutput * pair = &output->pairs[i];
+//        
+//        //if ( edge )
+//        //{
+//        //    if ( pair->pass )
+//        //    {
+//        //        const Sketch::Reference & qry = sketch.getReference(i);
+//        //        cout << (comment ? ref.comment : ref.name) << '\t'<< (comment ? qry.comment : qry.name) << '\t' << pair->distance << '\t' << pair->pValue << '\t' << pair->numer << '/' << pair->denom << endl;
+//        //    }
+//        //}
+//        //else
+//        //{
+//        //    cout << '\t' << pair->distance;
+//        //}
+//
+//		//TODO
+//		if(pair->distance == 1.0){
+//			distCount += 1.0;
+//		}
+//		else{
+//			if(distCount == 0.0){
+//				output2Buffer[j] = pair->distance;
+//				j++;
+//			}
+//			else{
+//				output2Buffer[j] = distCount;
+//				j++;
+//				output2Buffer[j] = pair->distance;
+//				j++;
+//			}
+//			distCount = 0.0;
+//		}
+//
+//        if ( pair->pValue > pValuePeakToSet )
+//        {
+//            pValuePeakToSet = pair->pValue;
+//        }
+//    }
+//	if(distCount != 0){//if all the dist is 1, save the distCount. 
+//		output2Buffer[j] = distCount;
+//		j++;
+//	}
+//
+//	//cout << "the output->index is: " << output->index << endl;
+//	//cout << "the j is: " << j << endl;
+//
+//	output2File.write(reinterpret_cast<char*>(output2Buffer), (j) * sizeof(double));
+//    
+//    //if ( !edge )
+//    //{
+//    //    cout << endl;
+//    //}
+//    
+//    delete output;
+//}
+
+
+void CommandTriangle::writeOutput(TriangleOutput * output, bool comment, bool edge, double & pValuePeakToSet, ofstream &oFile) const
 {
     const Sketch & sketch = output->sketch;
     const Sketch::Reference & ref = sketch.getReference(output->index);
 
-	string name_ = ref.name;
-	//cout << name_ << "===addbyxxm" <<endl;
-	//exit(0);
-	output1Buffer = &(name_[0]);
-	output1File.write(reinterpret_cast<char*>(output1Buffer), (20) * sizeof(char));
+	//CommandDistance::CompareOutput::PairOutput * bufferPair = new CommandDistance::CompareOutput::PairOutput[output->index];
+	Result * bufferPair = new Result[output->index];
+
 
     
     //if ( !edge )
@@ -262,65 +349,59 @@ void CommandTriangle::writeOutput(TriangleOutput * output, bool comment, bool ed
     //    cout << (comment ? ref.comment : ref.name);
     //}
     
-	double distCount = 0.0;
-	int j = 0;
     for ( uint64_t i = 0; i < output->index; i++ )
     {
         const CommandDistance::CompareOutput::PairOutput * pair = &output->pairs[i];
+		if(pair->pass){
+			bufferPair[i].refID = output->index;
+			bufferPair[i].queryID = i;
+			bufferPair[i].numer = pair->numer;
+			bufferPair[i].denom = pair->denom;
+			bufferPair[i].distance = pair->distance;
+			bufferPair[i].pValue = pair->pValue;
+		}
         
-        //if ( edge )
-        //{
-        //    if ( pair->pass )
-        //    {
-        //        const Sketch::Reference & qry = sketch.getReference(i);
-        //        cout << (comment ? ref.comment : ref.name) << '\t'<< (comment ? qry.comment : qry.name) << '\t' << pair->distance << '\t' << pair->pValue << '\t' << pair->numer << '/' << pair->denom << endl;
-        //    }
-        //}
-        //else
-        //{
-        //    cout << '\t' << pair->distance;
-        //}
+//        if ( edge )
+//        {
+//            if ( pair->pass )
+//            {
+//                const Sketch::Reference & qry = sketch.getReference(i);
+//                cout << (comment ? ref.comment : ref.name) << '\t'<< (comment ? qry.comment : qry.name) << '\t' << pair->distance << '\t' << pair->pValue << '\t' << pair->numer << '/' << pair->denom << endl;
+//            }
+//        }
+//        else
+//        {
+//            cout << '\t' << pair->distance;
+//        }
 
 		//TODO
-		if(pair->distance == 1.0){
-			distCount += 1.0;
-		}
-		else{
-			if(distCount == 0.0){
-				output2Buffer[j] = pair->distance;
-				j++;
-			}
-			else{
-				output2Buffer[j] = distCount;
-				j++;
-				output2Buffer[j] = pair->distance;
-				j++;
-			}
-			distCount = 0.0;
-		}
+       	//outputBuffer[i] = pair->distance;
 
         if ( pair->pValue > pValuePeakToSet )
         {
             pValuePeakToSet = pair->pValue;
         }
     }
-	if(distCount != 0){//if all the dist is 1, save the distCount. 
-		output2Buffer[j] = distCount;
-		j++;
-	}
+		
 
-	//cout << "the output->index is: " << output->index << endl;
-	//cout << "the j is: " << j << endl;
+	//outputFile.write(reinterpret_cast<char*>(outputBuffer), output->index * sizeof(double));
+    
+//    if ( !edge )
+//    {
+//        cout << endl;
+//    }
 
-	output2File.write(reinterpret_cast<char*>(output2Buffer), (j) * sizeof(double));
-    
-    //if ( !edge )
-    //{
-    //    cout << endl;
-    //}
-    
+
+	//oFile.write((char*)bufferPair, output->index * sizeof(CommandDistance::CompareOutput::PairOutput));
+	oFile.write((char*)bufferPair, output->index * sizeof(Result));
+	oFile.flush();
+	delete bufferPair;
     delete output;
 }
+
+
+
+
 void CommandTriangle::writeOutput(TriangleOutput * output, bool comment, bool edge, double & pValuePeakToSet) const
 {
     const Sketch & sketch = output->sketch;
