@@ -276,6 +276,7 @@ int def(int fdSource, int fdDest, int level);
 int inf(int fdSource, int fdDest);
 void zerr(int ret);
 
+double get_sec();
 
 //for efficient fasta I/O
 //template<class SketchRes>

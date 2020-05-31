@@ -17,19 +17,6 @@
 
 using namespace::std;
 
-int64_t getFileSize( const char * fileName)
-{
-	struct stat statbuf;
-	stat(fileName, &statbuf);
-	return (int64_t)statbuf.st_size;
-}
-
-double get_sec()
-{
-	struct timeval tv;
-	gettimeofday(&tv, NULL);
-	return (double)tv.tv_sec + (double)tv.tv_usec / 1000000;
-}
 
 namespace mash{
 
@@ -47,6 +34,14 @@ CommandDumpdist::CommandDumpdist() : Command()
 	useOption("threads");
 	useOption("help");
 }
+
+int64_t getFileSize( const char * fileName)
+{
+	struct stat statbuf;
+	stat(fileName, &statbuf);
+	return (int64_t)statbuf.st_size;
+}
+
 
 int CommandDumpdist::run() const
 {

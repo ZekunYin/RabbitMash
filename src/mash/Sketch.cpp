@@ -30,6 +30,7 @@
 #include <math.h>
 #include <list>
 #include <string.h>
+#include <sys/time.h>
 
 #if defined __AVX512F__ && defined __AVX512CD__
 #include <immintrin.h>
@@ -57,6 +58,13 @@ KSEQ_INIT(gzFile, gzread)
 using namespace std;
 
 int bGlobalIndex = 0;
+
+double get_sec()
+{
+	struct timeval tv;
+	gettimeofday(&tv, NULL);
+	return (double)tv.tv_sec + (double)tv.tv_usec / 1000000;
+}
 
 typedef map < Sketch::hash_t, vector<Sketch::PositionHash> > LociByHash_map;
 

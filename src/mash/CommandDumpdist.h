@@ -15,6 +15,7 @@ private:
 	
 
 };
+int64_t getFileSize( const char * fileName);
 
 } // namespace mash
 

@@ -13,22 +13,23 @@
 #include "CommandDistance.h"
 #include "CommandTriangle.h"
 #include "Sketch.h"
+#include "CommandDumpdist.h"
 
 #define DIST 1
 
 using namespace::std;
-int64_t getFileSize_( const char * fileName)
-{
-	struct stat statbuf;
-	stat(fileName, &statbuf);
-	return (int64_t)statbuf.st_size;
-}
-
-double get_sec_(){
-	struct timeval tv;
-	gettimeofday(&tv, NULL);
-	return (double)tv.tv_sec + (double)tv.tv_usec / 1000000;
-}
+//int64_t getFileSize_( const char * fileName)
+//{
+//	struct stat statbuf;
+//	stat(fileName, &statbuf);
+//	return (int64_t)statbuf.st_size;
+//}
+//
+//double get_sec_(){
+//	struct timeval tv;
+//	gettimeofday(&tv, NULL);
+//	return (double)tv.tv_sec + (double)tv.tv_usec / 1000000;
+//}
 
 namespace mash{
 
@@ -41,8 +42,6 @@ CommandDumpTri::CommandDumpTri() : Command()
 	//the output format defined by CommandTriangle
     addOption("comment", Option(Option::Boolean, "C", "Output", "Use comment fields for sequence names instead of IDs.", ""));
     addOption("edge", Option(Option::Boolean, "E", "Output", "Output edge list instead of Phylip matrix, with fields [seq1, seq2, dist, p-val, shared-hashes].", ""));
-    //addOption("pvalue", Option(Option::Number, "v", "Output", "Maximum p-value to report in edge list. Implies -" + getOption("edge").identifier + ".", "1.0", 0., 1.));
-    //addOption("distance", Option(Option::Number, "d", "Output", "Maximum distance to report in edge list. Implies -" + getOption("edge").identifier + ".", "1.0", 0., 1.));
 
 	addOption("output", Option(Option::String, "o", "Output", "output file", ""));
 	useOption("threads");
@@ -62,15 +61,14 @@ int CommandDumpTri::run() const
 	bool comment = options.at("comment").active;
 	bool edge = options.at("edge").active;
 
-
-
-
-
-
-
 	string refMsh = arguments[0];
 	string fileName = arguments[1];
 	string oFileName = options.at("output").argument;
+
+	if(!hasSuffix(refMsh, ".msh")){
+		cerr << refMsh << "is not msh format, please provide correct input" << endl;
+		exit(1);
+	}
 
 	if(oFileName == "")
 		oFileName = fileName + ".tri";
@@ -90,6 +88,7 @@ int CommandDumpTri::run() const
 	}
 
 	Sketch::Parameters parameters;
+	//TODO: setup parameters
 	int threads = options.at("threads").getArgumentAsNumber();
 
 	Sketch refSketch;
@@ -97,7 +96,7 @@ int CommandDumpTri::run() const
 	refFiles.push_back(refMsh);
 	refSketch.initFromFiles(refFiles, parameters);
 
-	int64_t binSize = getFileSize_(fileName.c_str());
+	int64_t binSize = getFileSize(fileName.c_str());
 	int64_t resSize = binSize / sizeof(CommandTriangle::Result);
 	if(binSize % sizeof(CommandTriangle::Result) != 0)
 	{
@@ -111,8 +110,6 @@ int CommandDumpTri::run() const
 	CommandTriangle::Result * buffer = new CommandTriangle::Result [binSize / sizeof(CommandTriangle::Result)];
 	resultFile.read((char*)buffer, binSize);
 	
-	cerr << "end the resultFile.read " << endl;
-	cerr << "the threads number is " << threads << endl;
 	string oFilePrefix = fileName + ".tri";
 	if(edge){
 		#pragma omp parallel for default(shared) num_threads(threads)
@@ -123,8 +120,6 @@ int CommandDumpTri::run() const
 			int64_t end = resSize < (i + 1) * ((resSize + threads - 1) / threads)
 						? resSize : (i + 1) * ((resSize + threads - 1) / threads);
 			
-		cerr << "the start is: " << start << endl;
-		cerr << "the end is: " << end << endl;
 			for(int j = start; j < end; j++){
 				if(edge)
 				{
@@ -160,7 +155,7 @@ int CommandDumpTri::run() const
 
 	else{//not edge triangle output
 		int mean = (resSize + threads - 1) / threads;
-//		#pragma omp parallel for default(shared) num_threads(threads)
+		#pragma omp parallel for default(shared) num_threads(threads)
 		for(int i = 0; i < threads; i++)
 		{
 			fstream oFile(oFilePrefix + to_string(i), ios::out | ios::binary | ios::trunc);
@@ -168,20 +163,10 @@ int CommandDumpTri::run() const
 			int endLine = sqrt((i+1) * mean * 2);
 			int start = (startLine+1)*(startLine+2)/2 - 1;
 			int end = resSize < (endLine+1)*(endLine+2)/2 ? resSize-1 : (endLine+1)*(endLine+2)/2 - 1;
-
-			
-//			cout << "startLine is: " << startLine << endl;
-//			cout << "endLine is: " << endLine << endl;
-//			cout << endl;
-//			cout << "start is: " << start << endl;
-//			cout << "end is: " << end << endl;
 			
 			//int curLine = startLine+1+ ceil((double)i/threads);
 			int curLine = startLine + 1;
 			string tmp;
-//			cout << "curLine is: " << curLine << endl;
-//			cout << endl;
-//			cout << endl;
 
 			if(!comment)
 				tmp = refSketch.getReference(buffer[start].refID).name;
@@ -218,6 +203,7 @@ int CommandDumpTri::run() const
 
 				}
 			}
+
 //			tmp +="\n";
 //			oFile.write(tmp.c_str(), tmp.size());
 
@@ -228,7 +214,7 @@ int CommandDumpTri::run() const
 
 	}
 	
-	double t1 = get_sec_();
+	double t1 = get_sec();
 	int tmpSize = 1<<20;
 	unsigned char *tmpBuffer = new unsigned char[tmpSize];
 
@@ -251,7 +237,7 @@ int CommandDumpTri::run() const
 	
 	}
 
-	double t2 = get_sec_();
+	double t2 = get_sec();
 
 	cerr << "combine time is: " << t2 - t1 << endl;
 
@@ -265,97 +251,4 @@ int CommandDumpTri::run() const
 }
 
 }//namespace mash
-
-
-			
-
-
-
-//	string nameFile = arguments[0];
-//	string distFile = arguments[1];
-//
-//	fstream out1(nameFile.c_str(), out1.binary | out1.in);
-//	fstream out2(distFile.c_str(), out2.binary | out2.in);
-//
-//	if(!out1.is_open()){
-//		cerr << "fail to open " << nameFile << endl;
-//		return 1;
-//	}
-//	if(!out2.is_open()){
-//		cerr << "fail to open " << distFile << endl;
-//		return 1;
-//	}
-//
-//	double d;
-//	char * name = new char[20];
-//
-//	int lineSize = 1;
-//	int lineIndex = 0;
-//	int readNum = 0;
-//
-//	out1.read(reinterpret_cast<char*>(name), 20 * sizeof(char));
-//	for(int i = 0; i < 20; i++){
-//		if(name[i] < 32) break;//invalid ASCII
-//		cout << name[i];
-//	}
-//
-//	while(1){
-//		out2.read(reinterpret_cast<char*>(&d), sizeof d);
-//		if(out2.eof()) break;
-//		
-//		readNum++;
-//		if(d < 1.0){
-//			if(lineIndex < lineSize){
-//				cout << '\t' << d;
-//				lineIndex++;
-//			}
-//			else{
-//				cout << endl;
-//				out1.read(reinterpret_cast<char*>(name), 20 * sizeof(char));
-//				for(int i = 0; i < 20; i++){
-//					if(name[i] < 32) break;//invalid ASCII
-//					cout << name[i];
-//				}
-//				cout << '\t' << d;
-//				lineIndex = 1;
-//				lineSize++;
-//			}
-//		}
-//
-//		else{//d >= 1
-//			for(int j = 0; j < d / 1; j++){
-//				if(lineIndex < lineSize){
-//					//cout << DIST << '\t';
-//					cout << '\t' << DIST;
-//					lineIndex++;
-//				}
-//				else{
-//					cout << endl;
-//					out1.read(reinterpret_cast<char*>(name), 20 * sizeof(char));
-//					for(int i = 0; i < 20; i++){
-//						if(name[i] < 32) break;//invalid ASCII
-//						cout << name[i];
-//					}
-//					//cout << DIST << '\t';
-//					cout << '\t' << DIST;
-//
-//					lineIndex = 1;
-//					lineSize++;
-//				}
-//			}
-//		} 
-//			
-//	}
-//	cout << endl;//make sure the tail line endl in order to get the same md5-value with Mash.
-//	cerr << "the readNum is: " << readNum << endl;
-//	
-//
-//	delete name;
-//	out1.close();
-//	out2.close();
-//
-//	return 0;
-//}
-//
-//} //namespace mash
 

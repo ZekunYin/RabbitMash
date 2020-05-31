@@ -16,11 +16,6 @@ using std::string;
 using std::vector;
 
 namespace mash {
-double get_sec(){
-	struct timeval tv;
-	gettimeofday(&tv, NULL);
-	return (double)tv.tv_sec + (double)tv.tv_usec/1000000;
-}
 
 CommandSketch::CommandSketch()
 : Command()
