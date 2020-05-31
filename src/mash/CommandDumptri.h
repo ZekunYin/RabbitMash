@@ -7,10 +7,10 @@
 
 namespace mash{
 
-class CommandDumpTri : public Command
+class CommandDumptri : public Command
 {
 public:
-	CommandDumpTri();
+	CommandDumptri();
 	int run() const; // override?
 	
 private:

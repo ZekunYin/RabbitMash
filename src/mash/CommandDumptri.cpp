@@ -33,7 +33,7 @@ using namespace::std;
 
 namespace mash{
 
-CommandDumpTri::CommandDumpTri() : Command()
+CommandDumptri::CommandDumptri() : Command()
 {
 	name = "dumptri";
 	summary = "Convert binary triangle results to human-readable texts.";
@@ -50,7 +50,7 @@ CommandDumpTri::CommandDumpTri() : Command()
 	//addOption -o outputfile.
 }
 
-int CommandDumpTri::run() const
+int CommandDumptri::run() const
 {
 	if(arguments.size() < 2 || options.at("help").active)
 	{

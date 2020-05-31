@@ -36,7 +36,7 @@ int main(int argc, const char ** argv)
     commandList.addCommand(new mash::CommandInfo());
     commandList.addCommand(new mash::CommandPaste());
     commandList.addCommand(new mash::CommandBounds());
-	commandList.addCommand(new mash::CommandDumpTri());
+	commandList.addCommand(new mash::CommandDumptri());
 	commandList.addCommand(new mash::CommandDumpdist());
     
     return commandList.run(argc, argv);
