@@ -156,62 +156,71 @@ int CommandDumpTri::run() const
 				}
 			}
 		}
-	}
+	}//end if(edge)
 
 	else{//not edge triangle output
 		int mean = (resSize + threads - 1) / threads;
-		#pragma omp parallel for default(shared) num_threads(threads)
+//		#pragma omp parallel for default(shared) num_threads(threads)
 		for(int i = 0; i < threads; i++)
 		{
 			fstream oFile(oFilePrefix + to_string(i), ios::out | ios::binary | ios::trunc);
 			int startLine = sqrt(i * mean * 2);
 			int endLine = sqrt((i+1) * mean * 2);
-			int start = (startLine+1) * (startLine+2) / 2;
-			int end = resSize < (endLine+1) * (endLine+2) / 2 ? resSize : (endLine+1) * (endLine+2) / 2;
+			int start = (startLine+1)*(startLine+2)/2 - 1;
+			int end = resSize < (endLine+1)*(endLine+2)/2 ? resSize-1 : (endLine+1)*(endLine+2)/2 - 1;
+
 			
-			int curLine = startLine+1;
+//			cout << "startLine is: " << startLine << endl;
+//			cout << "endLine is: " << endLine << endl;
+//			cout << endl;
+//			cout << "start is: " << start << endl;
+//			cout << "end is: " << end << endl;
+			
+			//int curLine = startLine+1+ ceil((double)i/threads);
+			int curLine = startLine + 1;
 			string tmp;
-			cout << "curLine is: " << curLine << endl;
+//			cout << "curLine is: " << curLine << endl;
+//			cout << endl;
+//			cout << endl;
 
 			if(!comment)
-				//cout << refSketch.getReference(curLine-1).name;
-				//tmp = refSketch.getReference(buffer[start].refID).name;
-				tmp = refSketch.getReference(curLine).name;
+				tmp = refSketch.getReference(buffer[start].refID).name;
 			else
-				//cout << refSketch.getReference(curLine-1).comment;
-				//tmp = refSketch.getReference(buffer[start].refID).comment;
-				tmp = refSketch.getReference(curLine).comment;
-			for(int j = start; j < end; j++){
+				tmp = refSketch.getReference(buffer[start].refID).comment;
+
+			for(int j = start; j <= end; j++){
 				if(!comment){
-					//cout << "\t" << to_string(buffer[j].distance);
 					tmp += "\t";
 					tmp += to_string(buffer[j].distance);
-					if(j % (curLine * (curLine+1) / 2) == 0){
-					//	cout << endl;
-					//	curLine++;
-					//	cout << refSketch.getReference(buffer[j].refID).name;
-						tmp +="\n";
-						oFile.write(tmp.c_str(), tmp.size());
+					if(j+1 == curLine * (curLine+1) / 2){
+						if(start == 0 || j != start){//erase multiThread redundant output
+							tmp +="\n";
+							oFile.write(tmp.c_str(), tmp.size());
+						}
 						curLine++;
 						tmp = 
-						refSketch.getReference(curLine).name;
-						//refSketch.getReference(buffer[j].refID+1).name;
+						refSketch.getReference(buffer[j+1].refID).name;
 					}
 
 				}
 				else{
 					tmp += "\t";
 					tmp += to_string(buffer[j].distance);
-					if(j % (curLine * (curLine+1) / 2) == 0){
-						tmp += "\n";
-						oFile.write(tmp.c_str(), tmp.size());
+					if(j+1 == curLine * (curLine+1) / 2){
+						if(start == 0 || j != start){
+							tmp +="\n";
+							oFile.write(tmp.c_str(), tmp.size());
+						}
+						curLine++;
 						tmp = 
-						refSketch.getReference(curLine).comment;
-						//refSketch.getReference(buffer[j].refID).comment;
+						refSketch.getReference(buffer[j+1].refID).comment;
 					}
 
 				}
 			}
+//			tmp +="\n";
+//			oFile.write(tmp.c_str(), tmp.size());
+
 			oFile.close();
 
 		}
