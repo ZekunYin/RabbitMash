@@ -147,7 +147,7 @@ int CommandTriangle::run() const
 		}
 	}
     
-    if ( !edge )
+    if ( !edge && !outBin)
     {
         cout << '\t' << sketch.getReferenceCount() << endl;
         cout << (comment ? sketch.getReference(0).comment : sketch.getReference(0).name) << endl;

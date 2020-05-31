@@ -18,18 +18,6 @@
 #define DIST 1
 
 using namespace::std;
-//int64_t getFileSize_( const char * fileName)
-//{
-//	struct stat statbuf;
-//	stat(fileName, &statbuf);
-//	return (int64_t)statbuf.st_size;
-//}
-//
-//double get_sec_(){
-//	struct timeval tv;
-//	gettimeofday(&tv, NULL);
-//	return (double)tv.tv_sec + (double)tv.tv_usec / 1000000;
-//}
 
 namespace mash{
 
@@ -66,7 +54,7 @@ int CommandDumptri::run() const
 	string oFileName = options.at("output").argument;
 
 	if(!hasSuffix(refMsh, ".msh")){
-		cerr << refMsh << "is not msh format, please provide correct input" << endl;
+		cerr << refMsh << " is not .msh format, please provide correct input" << endl;
 		exit(1);
 	}
 
@@ -154,6 +142,15 @@ int CommandDumptri::run() const
 	}//end if(edge)
 
 	else{//not edge triangle output
+		
+		//add the first two line of the triangle.
+		fstream oFileHead(oFilePrefix + "head", ios::out | ios::binary | ios::trunc);
+		string tmp1 = to_string(refSketch.getReferenceCount()) + "\n";
+		oFileHead.write(tmp1.c_str(), tmp1.size());
+		string tmp2 = comment ? refSketch.getReference(0).comment : refSketch.getReference(0).name + "\n";
+		oFileHead.write(tmp2.c_str(), tmp2.size());
+		oFileHead.close();
+
 		int mean = (resSize + threads - 1) / threads;
 		#pragma omp parallel for default(shared) num_threads(threads)
 		for(int i = 0; i < threads; i++)
@@ -217,6 +214,19 @@ int CommandDumptri::run() const
 	double t1 = get_sec();
 	int tmpSize = 1<<20;
 	unsigned char *tmpBuffer = new unsigned char[tmpSize];
+
+	FILE *tmpFileHead = fopen((oFilePrefix + "head").c_str(), "rb");
+	if(tmpFileHead == NULL){
+		cerr << "can not open" << (oFilePrefix + "head") << endl;
+		exit(1);
+	}
+	int lengthHead;
+	while(true){
+		lengthHead = fread(tmpBuffer, sizeof(unsigned char), tmpSize, tmpFileHead);
+		fwrite((void*)tmpBuffer, sizeof(unsigned char), lengthHead, fout);
+		if(lengthHead < tmpSize) break;
+	}
+	remove((oFilePrefix + "head").c_str());
 
 	for(int i = 0; i < threads; i++){
 		FILE *tmpFile = fopen((oFilePrefix + to_string(i)).c_str(), "rb");
