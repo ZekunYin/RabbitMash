@@ -15,7 +15,7 @@
 #include "CommandInfo.h"
 #include "CommandPaste.h"
 
-#include "CommandDumpTri.h"
+#include "CommandDumptri.h"
 #include "CommandDumpdist.h"
 
 int main(int argc, const char ** argv)
