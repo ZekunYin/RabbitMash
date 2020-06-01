@@ -147,7 +147,7 @@ int CommandDumptri::run() const
 		fstream oFileHead(oFilePrefix + "head", ios::out | ios::binary | ios::trunc);
 		string tmp1 = to_string(refSketch.getReferenceCount()) + "\n";
 		oFileHead.write(tmp1.c_str(), tmp1.size());
-		string tmp2 = comment ? refSketch.getReference(0).comment : refSketch.getReference(0).name + "\n";
+		string tmp2 = (comment ? refSketch.getReference(0).comment : refSketch.getReference(0).name) + "\n";
 		oFileHead.write(tmp2.c_str(), tmp2.size());
 		oFileHead.close();
 
@@ -215,18 +215,20 @@ int CommandDumptri::run() const
 	int tmpSize = 1<<20;
 	unsigned char *tmpBuffer = new unsigned char[tmpSize];
 
-	FILE *tmpFileHead = fopen((oFilePrefix + "head").c_str(), "rb");
-	if(tmpFileHead == NULL){
-		cerr << "can not open" << (oFilePrefix + "head") << endl;
-		exit(1);
+	if(!edge){
+		FILE *tmpFileHead = fopen((oFilePrefix + "head").c_str(), "rb");
+		if(tmpFileHead == NULL){
+			cerr << "can not open" << (oFilePrefix + "head") << endl;
+			exit(1);
+		}
+		int lengthHead;
+		while(true){
+			lengthHead = fread(tmpBuffer, sizeof(unsigned char), tmpSize, tmpFileHead);
+			fwrite((void*)tmpBuffer, sizeof(unsigned char), lengthHead, fout);
+			if(lengthHead < tmpSize) break;
+		}
+		remove((oFilePrefix + "head").c_str());
 	}
-	int lengthHead;
-	while(true){
-		lengthHead = fread(tmpBuffer, sizeof(unsigned char), tmpSize, tmpFileHead);
-		fwrite((void*)tmpBuffer, sizeof(unsigned char), lengthHead, fout);
-		if(lengthHead < tmpSize) break;
-	}
-	remove((oFilePrefix + "head").c_str());
 
 	for(int i = 0; i < threads; i++){
 		FILE *tmpFile = fopen((oFilePrefix + to_string(i)).c_str(), "rb");
