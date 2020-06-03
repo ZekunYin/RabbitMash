@@ -6,7 +6,7 @@ RabbitMash is an efficient highly optimized implementation of [Mash](https://git
 
 ## Installation
 
-The easiest way to use RabbitMash is to grab a binary release from [here](https://github.com/ZekunYin/RabbitMash/releases). We provide four versions of RabbitMash for different x86_64 architectures including:
+The easiest way to use RabbitMash is to grab a binary release from [here](https://github.com/ZekunYin/RabbitMash/releases). Currently, RabbitMash only supports x86_64 Linux. And we provide four versions of RabbitMash for different CPU architectures including:
 
 | Version     | CPU flags                 |
 | ----------- | ------------------------- |
