@@ -53,6 +53,8 @@ cd RabbitMash
 make -j4
 #optional
 make install
+#optional
+make test
 ```
 
 **Build dependency-free binary:**
@@ -67,6 +69,8 @@ cd RabbitMash
 make -j4
 #optional
 make install
+#optional
+make test
 ```
 
 You can also type `./configure -h` for configure help information.
@@ -77,7 +81,7 @@ You can also type `./configure -h` for configure help information.
 sudo dnf install capnproto capnproto-devel gsl gsl-devel
 ```
 
-If you are not a root user, you can build the dependecies from source code.
+If you are not a root user, you need to build the dependecies from source code.
 
 
 
@@ -168,5 +172,5 @@ RabbitMash paper is under review now.
 
 ## Limitations
 
-- OSX version is not tested.
-- x86 version is not tested.
+- OSX version has not been tested.
+- x86 version has not been tested.
