@@ -742,7 +742,8 @@ int Sketch::writeToCapnp(const char * file) const
     }
     
     int locusCount = 0;
-   	cerr << "positionHashesByReference.size: " << positionHashesByReference.size() << endl; 
+	//remove debug info
+   	//cerr << "positionHashesByReference.size: " << positionHashesByReference.size() << endl; 
     for ( int i = 0; i < positionHashesByReference.size(); i++ )
     {
         locusCount += positionHashesByReference.at(i).size();
