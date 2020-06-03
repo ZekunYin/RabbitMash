@@ -26,7 +26,9 @@ CommandDumptri::CommandDumptri() : Command()
 	name = "dumptri";
 	summary = "Convert binary triangle results to human-readable texts.";
 	description = "Convert binary results produced by \"triangle\" operation to human-readable texts using multiple threads.";
-	argumentString = "<name.bin> <dist.bin>";
+	argumentString = "<seq.msh> [<seq.msh>] <triangle.bin>";
+
+    addOption("list", Option(Option::Boolean, "l", "Input", "List input. Lines in each <seq> specify paths to sequence files, one per line. The reference file is not affected.", ""));
 	//the output format defined by CommandTriangle
     addOption("comment", Option(Option::Boolean, "C", "Output", "Use comment fields for sequence names instead of IDs.", ""));
     addOption("edge", Option(Option::Boolean, "E", "Output", "Output edge list instead of Phylip matrix, with fields [seq1, seq2, dist, p-val, shared-hashes].", ""));
@@ -46,16 +48,35 @@ int CommandDumptri::run() const
 		return 0;
 	}
 
+	vector<string> queryFiles;
+
 	bool comment = options.at("comment").active;
 	bool edge = options.at("edge").active;
+	bool list = options.at("list").active;
 
-	string refMsh = arguments[0];
-	string fileName = arguments[1];
+
+	//string refMsh = arguments[0];
+	string fileName = arguments.back();
 	string oFileName = options.at("output").argument;
 
-	if(!hasSuffix(refMsh, ".msh")){
-		cerr << refMsh << " is not .msh format, please provide correct input" << endl;
-		exit(1);
+	for(int i = 0; i < arguments.size() - 1; i++){
+		if(list)
+		{
+			splitFile(arguments[i], queryFiles);
+		}
+		else
+		{
+			queryFiles.push_back(arguments[i]);
+		}
+	
+	}
+	for(int i = 0; i < queryFiles.size(); i++)
+	{
+		if(!hasSuffix(queryFiles[i], ".msh")){
+			cerr << queryFiles[i] << " is not msh format, please provide correct input" << endl;
+			exit(1);
+		}
+
 	}
 
 	if(oFileName == "")
@@ -79,10 +100,8 @@ int CommandDumptri::run() const
 	//TODO: setup parameters
 	int threads = options.at("threads").getArgumentAsNumber();
 
-	Sketch refSketch;
-	vector<string> refFiles;
-	refFiles.push_back(refMsh);
-	refSketch.initFromFiles(refFiles, parameters);
+	Sketch querySketch;
+	querySketch.initFromFiles(queryFiles, parameters);
 
 	int64_t binSize = getFileSize(fileName.c_str());
 	int64_t resSize = binSize / sizeof(CommandTriangle::Result);
@@ -91,7 +110,7 @@ int CommandDumptri::run() const
 		cerr << "imcomplete binary file" << endl;
 		exit(1);
 	}
-	cerr << "ref sketches: " << refSketch.getReferenceCount() << endl;
+	cerr << "ref sketches: " << querySketch.getReferenceCount() << endl;
 	cerr << "binary file size: " << binSize << endl;
 	cerr << "number of results: " << resSize << endl;
 
@@ -112,10 +131,9 @@ int CommandDumptri::run() const
 				if(edge)
 				{
 					if(!comment){
-					//if(pair->pass)
 						string tmp = 
-								refSketch.getReference(buffer[j].refID).name + "\t"
-								+ refSketch.getReference(buffer[j].queryID).name + "\t"
+								querySketch.getReference(buffer[j].refID).name + "\t"
+								+ querySketch.getReference(buffer[j].queryID).name + "\t"
 								+ to_string(buffer[j].distance) + "\t"
 								+ to_string(buffer[j].pValue) + "\t"
 								+ to_string(buffer[j].numer) + "/"
@@ -124,8 +142,8 @@ int CommandDumptri::run() const
 					}
 					else{
 						string tmp = 
-								refSketch.getReference(buffer[j].refID).comment + "\t"
-								+ refSketch.getReference(buffer[j].queryID).comment + "\t"
+								querySketch.getReference(buffer[j].refID).comment + "\t"
+								+ querySketch.getReference(buffer[j].queryID).comment + "\t"
 								+ to_string(buffer[j].distance) + "\t"
 								+ to_string(buffer[j].pValue) + "\t"
 								+ to_string(buffer[j].numer) + "/"
@@ -145,9 +163,9 @@ int CommandDumptri::run() const
 		
 		//add the first two line of the triangle.
 		fstream oFileHead(oFilePrefix + "head", ios::out | ios::binary | ios::trunc);
-		string tmp1 = to_string(refSketch.getReferenceCount()) + "\n";
+		string tmp1 = to_string(querySketch.getReferenceCount()) + "\n";
 		oFileHead.write(tmp1.c_str(), tmp1.size());
-		string tmp2 = (comment ? refSketch.getReference(0).comment : refSketch.getReference(0).name) + "\n";
+		string tmp2 = (comment ? querySketch.getReference(0).comment : querySketch.getReference(0).name) + "\n";
 		oFileHead.write(tmp2.c_str(), tmp2.size());
 		oFileHead.close();
 
@@ -166,9 +184,9 @@ int CommandDumptri::run() const
 			string tmp;
 
 			if(!comment)
-				tmp = refSketch.getReference(buffer[start].refID).name;
+				tmp = querySketch.getReference(buffer[start].refID).name;
 			else
-				tmp = refSketch.getReference(buffer[start].refID).comment;
+				tmp = querySketch.getReference(buffer[start].refID).comment;
 
 			for(int j = start; j <= end; j++){
 				if(!comment){
@@ -181,7 +199,7 @@ int CommandDumptri::run() const
 						}
 						curLine++;
 						tmp = 
-						refSketch.getReference(buffer[j+1].refID).name;
+						querySketch.getReference(buffer[j+1].refID).name;
 					}
 
 				}
@@ -195,7 +213,7 @@ int CommandDumptri::run() const
 						}
 						curLine++;
 						tmp = 
-						refSketch.getReference(buffer[j+1].refID).comment;
+						querySketch.getReference(buffer[j+1].refID).comment;
 					}
 
 				}
