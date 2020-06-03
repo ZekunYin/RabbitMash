@@ -25,8 +25,9 @@ CommandDumpdist::CommandDumpdist() : Command()
 	name = "dumpdist";
 	summary = "Convert binary dist results to human-readable texts.";
 	description = "Convert binary results produced by \"dist\" operation to human-readable texts using multiple threads.";
-	argumentString = "<reference.msh> <query.msh> <dist.bin>";
+	argumentString = "<reference.msh> <query.msh> [<query.msh>] <dist.bin>";
 	
+    addOption("list", Option(Option::Boolean, "l", "Input", "List input. Lines in each <query> specify paths to sequence files, one per line. The reference file is not affected.", ""));
     addOption("table", Option(Option::Boolean, "t", "Output", "Table output (will not report p-values, but fields will be blank if they do not meet the p-value threshold).", ""));
     addOption("comment", Option(Option::Boolean, "C", "Output", "Show comment fields with reference/query names (denoted with ':').", "1.0", 0., 1.));
 	addOption("output", Option(Option::String, "o", "Output", "output human-readable text file", ""));
@@ -51,22 +52,43 @@ int CommandDumpdist::run() const
 		return 0;
 	}
 
-	string refMsh   = arguments[0];
-	string queryMsh = arguments[1];
-	string fileName = arguments[2];
+	vector<string> queryFiles;
+	vector<string> refFiles;
+
+	string refMsh   = arguments.front();
+	refFiles.push_back(refMsh);
+	string fileName = arguments.back();
+
 	string oFileName = options.at("output").argument;
 
     bool table = options.at("table").active;
     bool comment = options.at("comment").active;
+    bool list = options.at("list").active;
 
 	if(!hasSuffix(refMsh, ".msh")){
 		cerr << refMsh << " is not msh format, please provide correct input" << endl;
 		exit(1);
 	}
 
-	if(!hasSuffix(queryMsh, ".msh")){
-		cerr << queryMsh << " is not msh format, please provide correct input" << endl;
-		exit(1);
+	for(int i = 1; i < arguments.size() - 1; i++)
+	{           
+		if ( list )
+            {
+                splitFile(arguments[i], queryFiles);
+            }
+            else
+            {
+                queryFiles.push_back(arguments[i]);
+            }
+
+	}
+
+	for( int i = 0; i < queryFiles.size(); i++ )
+	{
+		if(!hasSuffix(queryFiles[i], ".msh")){
+			cerr << queryFiles[i] << " is not msh format, please provide correct input" << endl;
+			exit(1);
+		}
 	}
 
 	if(oFileName == "") oFileName = fileName + ".dist";
@@ -92,11 +114,8 @@ int CommandDumpdist::run() const
 	Sketch querySketch;
 	Sketch refSketch;
 
-	vector<string> queryFiles;
-	vector<string> refFiles;
 
-	queryFiles.push_back(queryMsh);
-	refFiles.push_back(refMsh);
+	//queryFiles.push_back(queryMsh);
 	
 	querySketch.initFromFiles(queryFiles, parameters);
 	refSketch.initFromFiles(refFiles, parameters);
