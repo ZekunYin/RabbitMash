@@ -110,9 +110,21 @@ int CommandDumptri::run() const
 		cerr << "imcomplete binary file" << endl;
 		exit(1);
 	}
-	cerr << "ref sketches: " << querySketch.getReferenceCount() << endl;
+	
+	cerr << "query sketches: " << querySketch.getReferenceCount() << endl;
 	cerr << "binary file size: " << binSize << endl;
 	cerr << "number of results: " << resSize << endl;
+	int64_t correctResSize = querySketch.getReferenceCount() * (querySketch.getReferenceCount()-1) / 2;
+	cerr << "correctResSize of results: " << correctResSize << endl;
+	if(resSize != correctResSize)
+	{
+		cerr << "unmatched msh file or bin file"  << endl;
+		cerr << "please checkout whether the msh file and bin file is from the same data and parameters" << endl;
+		
+		exit(1);
+	}
+	cerr << "msh and binary file are checked out !" << endl;
+	
 
 	CommandTriangle::Result * buffer = new CommandTriangle::Result [binSize / sizeof(CommandTriangle::Result)];
 	resultFile.read((char*)buffer, binSize);
