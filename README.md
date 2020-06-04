@@ -6,7 +6,7 @@ RabbitMash is an efficient highly optimized implementation of [Mash](https://git
 
 ## Installation
 
-The easiest way to use RabbitMash is to grab a binary release from [here](https://github.com/ZekunYin/RabbitMash/releases). We provide four versions of RabbitMash for different x86_64 architectures including:
+The easiest way to use RabbitMash is to grab a binary release from [here](https://github.com/ZekunYin/RabbitMash/releases). Currently, RabbitMash only supports x86_64 Linux. And we provide four versions of RabbitMash for different CPU architectures including:
 
 | Version     | CPU flags                 |
 | ----------- | ------------------------- |
@@ -53,6 +53,8 @@ cd RabbitMash
 make -j4
 #optional
 make install
+#optional
+make test
 ```
 
 **Build dependency-free binary:**
@@ -67,6 +69,8 @@ cd RabbitMash
 make -j4
 #optional
 make install
+#optional
+make test
 ```
 
 You can also type `./configure -h` for configure help information.
@@ -77,7 +81,7 @@ You can also type `./configure -h` for configure help information.
 sudo dnf install capnproto capnproto-devel gsl gsl-devel
 ```
 
-If you are not a root user, you can build the dependecies from source code.
+If you are not a root user, you need to build the dependecies from source code.
 
 
 
@@ -168,5 +172,5 @@ RabbitMash paper is under review now.
 
 ## Limitations
 
-- OSX version is not tested.
-- x86 version is not tested.
+- OSX version has not been tested.
+- x86 version has not been tested.

@@ -182,7 +182,7 @@ int CommandSketch::run() const
    	double t1 = get_sec(); 
     sketch.writeToCapnp(prefix.c_str());
    	double t2 = get_sec(); 
-	cerr << "the time of writeToCapnp is: " << t2 - t1 << endl;
+	//cerr << "the time of writeToCapnp is: " << t2 - t1 << endl;
     
     if ( warningCount > 0 && ! parameters.reads )
     {
