@@ -154,7 +154,7 @@ uint64 FastaFileReader::FindCutPos(FastaChunk* dataChunk_, uchar* data_, const u
 					this->totalSeqs++;
 				}else{
 					cut_ = pos_; //find a cut: incomplete name
-					std::cerr << "cut char: " << (char)data_[cut_] << std::endl;
+					//std::cerr << "cut char: " << (char)data_[cut_] << std::endl;
 					break;
 				}
 			}else{
