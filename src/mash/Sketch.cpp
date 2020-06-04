@@ -998,7 +998,11 @@ void addMinHashes(MinHashHeap & minHashHeap, const char * seq, uint64_t length, 
 	}
 
 	for(int i = n_kmers_body; i < n_kmers; i++){
-		bool noRev = (memcmp(input8 + i, input8_rev + length - i - kmerSize, kmerSize) <= 0) || noncanonical;
+	//	bool noRev = (memcmp(input8 + i, input8_rev + length - i - kmerSize, kmerSize) <= 0) || noncanonical;
+		bool noRev = true;
+		if(!noncanonical && (memcmp(input8 + i, input8_rev + length - i - kmerSize, kmerSize) >= 0)){
+			noRev = false;
+		}
 		if(noRev){
 			for(int j = 0; j < kmerSize; j++){
 				//kmer_buf[j] = input8[i + j];
@@ -1074,7 +1078,11 @@ void addMinHashes(MinHashHeap & minHashHeap, const char * seq, uint64_t length, 
 	}
 
 	for(int i = n_kmers_body; i < n_kmers; i++){
-		bool noRev = (memcmp(input8 + i, input8_rev + length -i - kmerSize, kmerSize) <= 0) || noncanonical;
+		//bool noRev = (memcmp(input8 + i, input8_rev + length -i - kmerSize, kmerSize) <= 0) || noncanonical;
+		bool noRev = true;
+		if(!noncanonical && (memcmp(input8 + i, input8_rev + length - i - kmerSize, kmerSize) >= 0)){
+			noRev = false;
+		}
 		if(noRev){
 			for(int j = 0; j < kmerSize; j++){
 				kmer_buf[j] = input8[i + j];
