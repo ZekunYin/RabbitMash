@@ -314,8 +314,8 @@ int CommandScreen::run() const
 	for(int i = 0; i < inStreams.size(); i++)
 	{
 	
-		isFA = hasSuffix(queryNames[i], ".fa") || hasSuffix(queryNames[i], ".fasta") || hasSuffix(queryNames[i], ".fna");
-		isFA |= hasSuffix(queryNames[i], ".fa.gz") || hasSuffix(queryNames[i], ".fasta.gz") || hasSuffix(queryNames[i], ".fna.gz");
+		isFA = hasSuffix(queryNames[i], ".fa") || hasSuffix(queryNames[i], ".fasta") || hasSuffix(queryNames[i], ".fna") || hasSuffix(queryNames[i], ".faa");
+		isFA |= hasSuffix(queryNames[i], ".fa.gz") || hasSuffix(queryNames[i], ".fasta.gz") || hasSuffix(queryNames[i], ".fna.gz") || hasSuffix(queryNames[i], ".faa.gz");
 
 		isFQ = hasSuffix(queryNames[i], ".fq") || hasSuffix(queryNames[i], ".fastq");
 		isFQ |= hasSuffix(queryNames[i], ".fq.gz") || hasSuffix(queryNames[i], ".fastq.gz");
