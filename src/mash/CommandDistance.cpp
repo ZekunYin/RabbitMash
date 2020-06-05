@@ -312,6 +312,7 @@ namespace mash {
         uint64_t i = output->indexQuery;
         uint64_t j = output->indexRef;
 		Result *buffer = new Result[output->pairCount];
+		uint64_t passCount = 0;
 		uint64_t k;
         for ( k = 0; k < output->pairCount && i < output->sketchQuery.getReferenceCount(); k++ )
         {
@@ -322,28 +323,32 @@ namespace mash {
         //        cout << output->sketchQuery.getReference(i).name;
         //    }
 
-            if ( table )
-            {
+            //if ( table )
+            //{
 
-                if ( pair->pass )
-                {
-					buffer[k].refID = j;
-					buffer[k].queryID = i;
-					buffer[k].distance = pair->distance;
-                }
-				j++;
-            }
-            else if ( pair->pass )
+            //    if ( pair->pass )
+            //    {
+			//		buffer[k].refID = j;
+			//		buffer[k].queryID = i;
+			//		buffer[k].distance = pair->distance;
+            //    }
+			//	j++;
+            //}
+            //else 
+            if ( pair->pass )
             {
-				buffer[k].refID = j;
-				buffer[k].queryID = i;
-				buffer[k].distance = pair->distance;
-				buffer[k].pValue = pair->pValue;
-				buffer[k].number = pair->numer;
-				buffer[k].denom = pair->denom;
+				buffer[passCount].refID = j;
+				buffer[passCount].queryID = i;
+				buffer[passCount].distance = pair->distance;
+				buffer[passCount].pValue = pair->pValue;
+				buffer[passCount].number = pair->numer;
+				buffer[passCount].denom = pair->denom;
+			
+				passCount++;
 
-            	j++;
 			}
+
+            j++;
 
 			if(j == output->sketchRef.getReferenceCount() )
 			{
@@ -354,7 +359,7 @@ namespace mash {
         }
 
 	
-		oFile.write((char*)buffer, k * sizeof(Result));
+		oFile.write((char*)buffer, passCount * sizeof(Result));
 		oFile.flush();
 		delete buffer;
         delete output;
