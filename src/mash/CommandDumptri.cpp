@@ -31,7 +31,7 @@ CommandDumptri::CommandDumptri() : Command()
     addOption("list", Option(Option::Boolean, "l", "Input", "List input. Lines in each <seq> specify paths to sequence files, one per line. The reference file is not affected.", ""));
 	//the output format defined by CommandTriangle
     addOption("comment", Option(Option::Boolean, "C", "Output", "Use comment fields for sequence names instead of IDs.", ""));
-    addOption("edge", Option(Option::Boolean, "E", "Output", "Output edge list instead of Phylip matrix, with fields [seq1, seq2, dist, p-val, shared-hashes].", ""));
+    //addOption("edge", Option(Option::Boolean, "E", "Output", "Output edge list instead of Phylip matrix, with fields [seq1, seq2, dist, p-val, shared-hashes].", ""));
 
 	addOption("output", Option(Option::String, "o", "Output", "output file", ""));
 	useOption("threads");
@@ -51,9 +51,11 @@ int CommandDumptri::run() const
 	vector<string> queryFiles;
 
 	bool comment = options.at("comment").active;
-	bool edge = options.at("edge").active;
+	//bool edge = options.at("edge").active;
 	bool list = options.at("list").active;
-
+	bool edge = false;
+	double distanceMax = 1.0;
+	double pValueMax = 1.0;
 
 	//string refMsh = arguments[0];
 	string fileName = arguments.back();
@@ -104,6 +106,7 @@ int CommandDumptri::run() const
 	querySketch.initFromFiles(queryFiles, parameters);
 
 	int64_t binSize = getFileSize(fileName.c_str());
+	binSize -= sizeof(uint64_t) + 2 * sizeof(double);//edge header
 	int64_t resSize = binSize / sizeof(CommandTriangle::Result);
 	if(binSize % sizeof(CommandTriangle::Result) != 0)
 	{
@@ -114,17 +117,34 @@ int CommandDumptri::run() const
 	cerr << "query sketches: " << querySketch.getReferenceCount() << endl;
 	cerr << "binary file size: " << binSize << endl;
 	cerr << "number of results: " << resSize << endl;
-	int64_t correctResSize = querySketch.getReferenceCount() * (querySketch.getReferenceCount()-1) / 2;
-	cerr << "correctResSize of results: " << correctResSize << endl;
-	if(resSize != correctResSize)
+
+	//read header edge distance pvalue
+	uint64_t header = 0;
+	resultFile.read((char*)&header, sizeof(uint64_t));	
+	resultFile.read((char*)&distanceMax, sizeof(double));	
+	resultFile.read((char*)&pValueMax  , sizeof(double));	
+	if(header == 0x1) edge = true;
+
+	if(edge)
 	{
-		cerr << "unmatched msh file or bin file"  << endl;
-		cerr << "please checkout whether the msh file and bin file is from the same data and parameters" << endl;
-		
-		exit(1);
-	}
-	cerr << "msh and binary file are checked out !" << endl;
+		cerr << "distanceMax: " << distanceMax << endl;
+		cerr << "pValueMax: "   << pValueMax   << endl;
+
+	} else {
 	
+		int64_t correctResSize = querySketch.getReferenceCount() * (querySketch.getReferenceCount()-1) / 2;
+		//cerr << "correctResSize of results: " << correctResSize << endl;
+
+		if(resSize != correctResSize)
+		{
+			cerr << "unmatched msh file or bin file"  << endl;
+			cerr << "please checkout whether the msh file and bin file is from the same data and parameters" << endl;
+			
+			exit(1);
+		}
+		//cerr << "msh and binary file are checked out !" << endl;
+
+	}
 
 	CommandTriangle::Result * buffer = new CommandTriangle::Result [binSize / sizeof(CommandTriangle::Result)];
 	resultFile.read((char*)buffer, binSize);

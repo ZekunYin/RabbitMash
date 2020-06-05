@@ -90,7 +90,21 @@ int CommandTriangle::run() const
     {
         edge = true;
     }
-    
+   
+	//write header to binary
+	if( edge )
+	{
+		uint64_t isEdge = 0x1;
+		oFile.write((char *)&isEdge, sizeof(uint64_t));
+		oFile.write((char *)&distanceMax, sizeof(double));
+		oFile.write((char *)&pValueMax, sizeof(double));
+	} else {
+		uint64_t isEdge = 0x0;
+		oFile.write((char *)&isEdge, sizeof(uint64_t));
+		oFile.write((char *)&distanceMax, sizeof(double));
+		oFile.write((char *)&pValueMax, sizeof(double));
+	}
+
     Sketch::Parameters parameters;
     
     if ( sketchParameterSetup(parameters, *(Command *)this) )
@@ -209,19 +223,19 @@ void CommandTriangle::writeOutput(TriangleOutput * output, bool comment, bool ed
 
 	//CommandDistance::CompareOutput::PairOutput * bufferPair = new CommandDistance::CompareOutput::PairOutput[output->index];
 	Result * bufferPair = new Result[output->index];
-    
+   	uint64_t passCount = 0; 
     for ( uint64_t i = 0; i < output->index; i++ )
     {
         const CommandDistance::CompareOutput::PairOutput * pair = &output->pairs[i];
 		if(pair->pass){
-			bufferPair[i].refID = output->index;
-			bufferPair[i].queryID = i;
-			bufferPair[i].numer = pair->numer;
-			bufferPair[i].denom = pair->denom;
-			bufferPair[i].distance = pair->distance;
-			bufferPair[i].pValue = pair->pValue;
+			bufferPair[passCount].refID = output->index;
+			bufferPair[passCount].queryID = i;
+			bufferPair[passCount].numer = pair->numer;
+			bufferPair[passCount].denom = pair->denom;
+			bufferPair[passCount].distance = pair->distance;
+			bufferPair[passCount].pValue = pair->pValue;
+			passCount++;
 		}
-
         if ( pair->pValue > pValuePeakToSet )
         {
             pValuePeakToSet = pair->pValue;
@@ -229,7 +243,7 @@ void CommandTriangle::writeOutput(TriangleOutput * output, bool comment, bool ed
     }
 
 	//oFile.write((char*)bufferPair, output->index * sizeof(CommandDistance::CompareOutput::PairOutput));
-	oFile.write((char*)bufferPair, output->index * sizeof(Result));
+	oFile.write((char*)bufferPair, passCount * sizeof(Result));
 	oFile.flush();
 	delete bufferPair;
     delete output;
