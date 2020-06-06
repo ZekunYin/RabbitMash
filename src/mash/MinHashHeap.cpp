@@ -81,8 +81,7 @@ void MinHashHeap::tryInsert(hash_u hash)
 	if
 	(
 		hashes.size() < cardinalityMaximum ||
-		//hashLessThan(hash, hashesQueue.top(), use64)
-		(hash.hash64 < hashesQueue.top().hash64)
+		hashLessThan(hash, hashesQueue.top(), use64)
 	)
 	{
 		if ( hashes.count(hash) == 0 )
