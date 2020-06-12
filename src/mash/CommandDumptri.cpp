@@ -160,32 +160,25 @@ int CommandDumptri::run() const
 						? resSize : (i + 1) * ((resSize + threads - 1) / threads);
 			
 			for(int j = start; j < end; j++){
-				if(edge)
-				{
-					if(!comment){
-						string tmp = 
-								querySketch.getReference(buffer[j].refID).name + "\t"
-								+ querySketch.getReference(buffer[j].queryID).name + "\t"
-								+ to_string(buffer[j].distance) + "\t"
-								+ to_string(buffer[j].pValue) + "\t"
-								+ to_string(buffer[j].numer) + "/"
-								+ to_string(buffer[j].denom) + "\n";
-						oFile.write(tmp.c_str(), tmp.size());
-					}
-					else{
-						string tmp = 
-								querySketch.getReference(buffer[j].refID).comment + "\t"
-								+ querySketch.getReference(buffer[j].queryID).comment + "\t"
-								+ to_string(buffer[j].distance) + "\t"
-								+ to_string(buffer[j].pValue) + "\t"
-								+ to_string(buffer[j].numer) + "/"
-								+ to_string(buffer[j].denom) + "\n";
-						oFile.write(tmp.c_str(), tmp.size());
-					}
+				if(!comment){
+					string tmp = 
+							querySketch.getReference(buffer[j].refID).name + "\t"
+							+ querySketch.getReference(buffer[j].queryID).name + "\t"
+							+ to_string(buffer[j].distance) + "\t"
+							+ to_string(buffer[j].pValue) + "\t"
+							+ to_string(buffer[j].numer) + "/"
+							+ to_string(buffer[j].denom) + "\n";
+					oFile.write(tmp.c_str(), tmp.size());
 				}
-				else
-				{
-	
+				else{
+					string tmp = 
+							querySketch.getReference(buffer[j].refID).comment + "\t"
+							+ querySketch.getReference(buffer[j].queryID).comment + "\t"
+							+ to_string(buffer[j].distance) + "\t"
+							+ to_string(buffer[j].pValue) + "\t"
+							+ to_string(buffer[j].numer) + "/"
+							+ to_string(buffer[j].denom) + "\n";
+					oFile.write(tmp.c_str(), tmp.size());
 				}
 			}
 		}
@@ -257,9 +250,8 @@ int CommandDumptri::run() const
 			oFile.close();
 
 		}
-		
 
-	}
+	}//end else(not edge)
 	
 	double t1 = get_sec();
 	int tmpSize = 1<<20;
