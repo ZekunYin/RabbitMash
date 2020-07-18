@@ -7,6 +7,7 @@
 #include "ThreadPool.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include <unistd.h>
 #include <iostream>
 
 template <class TypeInput, class TypeOutput>
@@ -35,10 +36,22 @@ ThreadPool<TypeInput, TypeOutput>::ThreadPool(TypeOutput * (* functionNew)(TypeI
     finished = false;
     
     threads = new pthread_t[threadCount];
-    
+   
+   	int numProcessors = sysconf(_SC_NPROCESSORS_CONF);
+	if (threadCount > numProcessors)
+		std::cerr << "WARNING: Threads should be smaller than number of processors" << std::endl;
+
+	pthread_attr_t attr;
+	cpu_set_t cpus;
+	pthread_attr_init(&attr);
+
     for ( int i = 0; i < threadCount; i++ )
     {
-        pthread_create(&threads[i], NULL, &ThreadPool::thread, this);
+		CPU_ZERO(&cpus);
+		CPU_SET(i, &cpus);
+		pthread_attr_setaffinity_np(&attr, sizeof(cpu_set_t), &cpus);
+        pthread_create(&threads[i], &attr, &ThreadPool::thread, this);
+        //pthread_create(&threads[i], NULL, &ThreadPool::thread, this);
     }
 }
 
