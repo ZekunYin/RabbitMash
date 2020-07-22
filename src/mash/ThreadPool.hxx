@@ -45,10 +45,19 @@ ThreadPool<TypeInput, TypeOutput>::ThreadPool(TypeOutput * (* functionNew)(TypeI
 	cpu_set_t cpus;
 	pthread_attr_init(&attr);
 
+	int socksets = 2;
+	int processorPerSocket = numProcessors / socksets;
+
     for ( int i = 0; i < threadCount; i++ )
     {
 		CPU_ZERO(&cpus);
-		CPU_SET(i, &cpus);
+//		if(i % 2 == 0)
+//			CPU_SET(i/2, &cpus);
+//		else
+//			CPU_SET(i/2 + processorPerSocket, &cpus);
+//
+		CPU_SET((i+1)%numProcessors, &cpus);
+
 		pthread_attr_setaffinity_np(&attr, sizeof(cpu_set_t), &cpus);
         pthread_create(&threads[i], &attr, &ThreadPool::thread, this);
         //pthread_create(&threads[i], NULL, &ThreadPool::thread, this);
