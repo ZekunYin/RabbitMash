@@ -79,17 +79,19 @@ else
     AC_SUBST(amcppflags, "-DUSE_BOOST")
 fi
 
-if test "x$CXX" == "xicpc"
-then
-	CPPFLAGS="$CPPFLAGS -xHost"
-	AC_MSG_NOTICE([using xHost"])
-fi
 
 AC_ARG_ENABLE(simd, AS_HELP_STRING([--enable-simd], [enable simd(default=no)]), [enable_simd=${enableval}], [enable_simd=no])       
 
 if test "x$enable_simd" == "xyes"
 then 
 	CPPFLAGS="$CPPFLAGS -march=native"
+
+	if test "x$CXX" == "xicpc"
+	then
+		CPPFLAGS="$CPPFLAGS -xHost"
+		AC_MSG_NOTICE([using xHost"])
+	fi
+
 	AC_MSG_NOTICE([simd CPPFLAGS: $CPPFLAGS])
 fi
 
