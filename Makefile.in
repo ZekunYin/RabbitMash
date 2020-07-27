@@ -1,3 +1,4 @@
+CXX=@CXX@
 CXXFLAGS += -O3 -std=c++14 -fopenmp -Isrc -I@capnp@/include -I@mathinc@
 CPPFLAGS += @CPPFLAGS@
 

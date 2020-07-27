@@ -1,5 +1,9 @@
 AC_INIT(src/mash/mash.cpp)
 
+AC_PROG_CXX([icpc])
+
+AC_MSG_NOTICE([CXX: $CXX])
+
 AC_ARG_WITH(capnp, [  --with-capnp=<path/to/capnp>     Cap'n Proto install dir (default: /usr/local/)])
 
 if test "$with_capnp" == ""
@@ -73,6 +77,12 @@ else
     AC_SUBST(mathlib, $with_boost/lib/libboost_math_c99.a)
     AC_SUBST(mathinc, $with_boost/include)
     AC_SUBST(amcppflags, "-DUSE_BOOST")
+fi
+
+if test "x$CXX" == "xicpc"
+then
+	CPPFLAGS="$CPPFLAGS -xHost"
+	AC_MSG_NOTICE([using xHost"])
 fi
 
 AC_ARG_ENABLE(simd, AS_HELP_STRING([--enable-simd], [enable simd(default=no)]), [enable_simd=${enableval}], [enable_simd=no])       
