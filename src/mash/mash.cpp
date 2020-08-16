@@ -42,10 +42,10 @@ int main(int argc, const char ** argv)
 	commandList.addCommand(new mash::CommandDumptri());
 	commandList.addCommand(new mash::CommandDumpdist());
 
-	cpu_set_t cpus;
-	CPU_ZERO(&cpus);
-	CPU_SET(0, &cpus);
-	sched_setaffinity(0, sizeof(cpus), &cpus);
+	//cpu_set_t cpus;
+	//CPU_ZERO(&cpus);
+	//CPU_SET(0, &cpus);
+	//sched_setaffinity(0, sizeof(cpus), &cpus);
 
     return commandList.run(argc, argv);
 }
