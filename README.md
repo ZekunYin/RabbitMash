@@ -176,7 +176,7 @@ Feel free to open a new issue, normally I can make a response in one day if I'm 
 
 ## Cite
 
-RabbitMash paper is under review now.
+Zekun Yin, Xiaoming Xu, Jinxiao Zhang, Yanjie Wei, Bertil Schmidt, Weiguo Liu, RabbitMash: Accelerating hash-based genome analysis on modern multi-core architectures, Bioinformatics, , btaa754, https://doi.org/10.1093/bioinformatics/btaa754
 
 ## Limitations
 
