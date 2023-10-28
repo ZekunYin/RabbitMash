@@ -57,7 +57,7 @@ git clone https://github.com/ZekunYin/RabbitMash.git
 cd RabbitMash
 ./bootstrap.sh
 ./configure [--prefix=...] [--with-capnp=...] [--with-gsl=...] \
-            [--with-simd=yes/no]
+            [--enable-simd=yes/no]
 make -j4
 #optional
 make install
@@ -72,7 +72,7 @@ git clone https://github.com/ZekunYin/RabbitMash.git
 cd RabbitMash
 ./bootstrap.sh
 ./configure [--prefix=...] [--with-capnp=...] [--with-gsl=...] \
-            [--with-simd=yes/no] [--enable-static-gsl=yes]     \
+            [--enable-simd=yes/no] [--enable-static-gsl=yes]     \
             [--enable-static-cpp=yes]
 make -j4
 #optional
